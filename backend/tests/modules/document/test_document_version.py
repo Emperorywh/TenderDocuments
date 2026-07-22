@@ -78,6 +78,7 @@ def test_state_transitions_change_only_status_and_processing_fields() -> None:
 
     version.mark_stored()
     version.mark_validating()
+    version.clear_security()
     version.mark_ready(canonical_object_key="canonical/abc", page_count=10)
 
     assert version.status == DocumentVersionStatus.READY
@@ -99,6 +100,48 @@ def test_illegal_transition_rejected() -> None:
     )
     from tender_insight.shared.state_transitions import InvalidTransitionError
 
-    # UPLOADING 不能直接到 READY（须经 STORED/VALIDATING）。
+    # VALIDATING -> VALIDATING 非法（状态机拒绝，不涉及安全门）。
+    version.mark_stored()
+    version.mark_validating()
     with pytest.raises(InvalidTransitionError):
+        version.mark_validating()
+
+
+def test_ready_requires_security_clearance() -> None:
+    """未完成安全检查不能进入 READY（C-019 安全门）。"""
+    version = DocumentVersion.create(
+        version_id=Uuid.new(),
+        document_id=Uuid.new(),
+        version_number=1,
+        original_object_key="original/abc",
+        sha256="a" * 64,
+        size_bytes=1,
+        mime="application/pdf",
+    )
+    version.mark_stored()
+    version.mark_validating()
+    # 未放行安全检查：mark_ready 被拒。
+    with pytest.raises(PermissionError):
         version.mark_ready()
+    assert version.status == DocumentVersionStatus.VALIDATING
+
+    # 放行后可进入 READY。
+    version.clear_security()
+    version.mark_ready()
+    assert version.status == DocumentVersionStatus.READY
+
+
+def test_security_clearance_only_in_validating() -> None:
+    """安全放行仅在 VALIDATING 状态允许。"""
+    version = DocumentVersion.create(
+        version_id=Uuid.new(),
+        document_id=Uuid.new(),
+        version_number=1,
+        original_object_key="original/abc",
+        sha256="a" * 64,
+        size_bytes=1,
+        mime="application/pdf",
+    )
+    # UPLOADING 状态不允许放行。
+    with pytest.raises(PermissionError):
+        version.clear_security()

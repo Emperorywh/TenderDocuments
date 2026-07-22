@@ -36,6 +36,8 @@ class DocumentVersion:
     page_count: int | None = None
     published_date: datetime | None = None
     effect_order: int | None = None
+    # 安全检查放行标记：未放行不得进入 READY（SPEC.md 第 11.1 节 quarantine 流转）。
+    security_cleared: bool = False
 
     # ---- 只读核心字段 ----
     @property
@@ -105,12 +107,23 @@ class DocumentVersion:
     def mark_validating(self) -> None:
         self._transition(DocumentVersionStatus.VALIDATING)
 
+    def clear_security(self) -> None:
+        """标记安全检查放行；仅在校验阶段（VALIDATING）允许放行。"""
+        if self.status != DocumentVersionStatus.VALIDATING:
+            raise PermissionError(
+                f"仅 VALIDATING 状态可放行安全检查，当前为 {self.status.value}"
+            )
+        self.security_cleared = True
+
     def mark_ready(
         self,
         *,
         canonical_object_key: str | None = None,
         page_count: int | None = None,
     ) -> None:
+        # 安全闸门：未完成安全检查不得进入 READY（SPEC.md 第 11.1 节）。
+        if not self.security_cleared:
+            raise PermissionError("未完成安全检查，版本不能进入 READY")
         self._transition(DocumentVersionStatus.READY)
         # canonical/page_count 是处理态补充，不是对原始元数据的覆盖。
         if canonical_object_key is not None:
