@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-011` 已完成，正在向 `A-012` 推进。
-* 整体完成度：`11 / 326` 个原子开发任务完成（约 `3.4%`）。
-* 当前分支：`main`，HEAD 为 `0642310`（A-010 提交）。
+* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-012` 已完成，正在向 `A-013` 推进。
+* 整体完成度：`12 / 326` 个原子开发任务完成（约 `3.7%`）。
+* 当前分支：`main`，HEAD 为 `166a42d`（A-011 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-012`
-* Task 名称：定义统一错误契约
+* Task 编号：`A-013`
+* Task 名称：建立强类型配置
 * 当前状态：待开始。
-* 前置依赖：`A-005`（已完成）。
-* 当前目标：定义 Problem Details 与稳定错误码目录。
-* 验收标准：两个示例失败返回同一结构且无需匹配文案。
+* 前置依赖：`A-002`（已完成）。
+* 当前目标：建立 Pydantic Settings 与环境变量示例。
+* 验收标准：缺少关键配置时进程明确失败退出。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-012 定义统一错误契约
+
+* 实现摘要：新增 `shared/errors.py`，定义稳定错误码目录 `ErrorCode`、领域错误基类 `DomainError` 及子类（NotFound/Conflict/StateTransition）、RFC 7807 风格 `ProblemDetail`（type/title/status/detail/error_code/instance/trace_id）、`problem_from_error` 映射（非领域异常归 INTERNAL_ERROR 不泄漏细节）与 `add_problem_exception_handler` FastAPI 处理器（返回 application/problem+json）。
+* 验证结果（2026-07-22）：`uv run pytest tests/shared` 56 项通过。NotFound 与 Conflict 两个示例失败返回字段结构一致、按 error_code/status 判定不匹配文案；未知异常归 INTERNAL_ERROR 且不泄漏敏感细节；FastAPI 处理器返回 problem+json。验证通过。
 
 ### A-011 定义请求追踪上下文
 
@@ -120,7 +125,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 11 个（`A-001`～`A-011`），剩余 315 个。
+`TASKS.md` 共有 326 个原子任务，已完成 12 个（`A-001`～`A-012`），剩余 314 个。
 
 已完成的非开发里程碑：
 
