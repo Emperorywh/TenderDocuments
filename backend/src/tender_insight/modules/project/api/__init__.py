@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from tender_insight.bootstrap.db import get_session
@@ -15,9 +16,24 @@ from tender_insight.modules.project.application.create_project import (
     CreateProjectResult,
     CreateProjectUseCase,
 )
+from tender_insight.modules.project.application.edit_project import (
+    EditProjectCommand,
+    EditProjectResult,
+    EditProjectUseCase,
+)
 from tender_insight.modules.project.infrastructure.repository import (
     SqlAlchemyProjectRepository,
 )
+
+
+class EditProjectRequest(BaseModel):
+    """编辑请求体：project_id 取自路径，body 仅含版本号与可变字段。"""
+
+    expected_version: int = Field(ge=1)
+    name: str | None = None
+    region: str | None = None
+    industry: str | None = None
+    project_type: str | None = None
 
 
 def create_router() -> APIRouter:
@@ -40,5 +56,30 @@ def create_router() -> APIRouter:
         """
         repository = SqlAlchemyProjectRepository(session)
         return CreateProjectUseCase(repository, session).execute(command)
+
+    @router.patch(
+        "/{project_id}",
+        response_model=EditProjectResult,
+    )
+    def edit_project(
+        project_id: str,
+        body: EditProjectRequest,
+        session: Session = Depends(get_session),
+    ) -> EditProjectResult:
+        """编辑项目（乐观并发）。
+
+        版本冲突返回 409 CONFLICT；项目不存在返回 404 NOT_FOUND；
+        空白字段返回 400 INVALID_PROJECT_DATA（统一 Problem Details）。
+        """
+        command = EditProjectCommand(
+            project_id=project_id,
+            expected_version=body.expected_version,
+            name=body.name,
+            region=body.region,
+            industry=body.industry,
+            project_type=body.project_type,
+        )
+        repository = SqlAlchemyProjectRepository(session)
+        return EditProjectUseCase(repository, session).execute(command)
 
     return router
