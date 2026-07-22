@@ -13,6 +13,8 @@ dist/
 .env
 .env.*
 !.env.example
+infra/.env.dev
+
 
 # Node / 前端构建产物（随 A-004 补充前端忽略规则）
 node_modules/

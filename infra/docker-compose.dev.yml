@@ -1,0 +1,38 @@
+# 开发环境基础设施（Docker Compose）。
+#
+# 本文件仅用于本地开发与集成测试，提供 PostgreSQL、Redis、MinIO、OpenTelemetry
+# 等依赖（随 A-016～A-019 逐个加入）。生产部署使用独立的 Compose 与 Secret 注入
+# （见阶段 K），不直接复用本文件的开发凭据。
+#
+# 安全约定（SPEC.md 第 4.2 节）：
+# - 端口仅绑定到 127.0.0.1，避免内部基础设施端口暴露到公共网络；
+# - 开发凭据为非生产默认值，生产凭据通过环境变量在 K-011 注入。
+#
+# 使用：
+#   docker compose -f infra/docker-compose.dev.yml --env-file infra/.env.dev up -d
+# 健康检查就绪后，业务进程可按 infra/.env.dev 中的连接串接入。
+services:
+  postgres:
+    # PostgreSQL 17：业务状态唯一事实来源（SPEC.md 第 2.4、7 节）。
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tender}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tender_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-tender}
+    ports:
+      # 仅本地回环绑定，内部端口不公开（SPEC.md 第 4.2 节）。
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # 命名数据卷：容器重启后测试数据仍存在（A-016 验证点）。
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready 探测数据库就绪；用于 Compose 依赖与 A-016 健康检查验证。
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
