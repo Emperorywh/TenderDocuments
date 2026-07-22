@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-005` 已完成，正在向 `A-006` 推进。
-* 整体完成度：`5 / 326` 个原子开发任务完成（约 `1.5%`）。
-* 当前分支：`main`，HEAD 为 `9aff899`（A-004 提交）。
+* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-006` 已完成，正在向 `A-007` 推进。
+* 整体完成度：`6 / 326` 个原子开发任务完成（约 `1.8%`）。
+* 当前分支：`main`，HEAD 为 `3e61220`（A-005 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-006`
-* Task 名称：建立模块依赖检查
+* Task 编号：`A-007`
+* Task 名称：定义 UUID 值对象
 * 当前状态：待开始。
 * 前置依赖：`A-005`（已完成）。
-* 当前目标：建立自动依赖规则；注入一条反向依赖后检查失败，移除后通过。
-* 验收标准：注入反向依赖后检查失败，移除后通过。
+* 当前目标：定义 UUID 生成与解析规则。
+* 验收标准：合法值往返一致，非法值被稳定错误拒绝。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,15 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-006 建立模块依赖检查
+
+* 实现摘要：建立分层依赖规则的唯一权威实现 `tests/architecture/dependency_rules.py`（AST 扫描 + 层级判定 + 违例收集），将 A-005 内联的导入扫描重构为单一来源；规则覆盖“低层不得反向依赖高层”（domain 不导入 application/infrastructure/api、application 不导入 infrastructure/api、infrastructure 不导入 api）与 domain 禁止第三方框架/SDK。`test_layering.py` 改为委托该权威实现；新增 `test_dependency_rules.py` 用临时源码根做受控注入验证。
+* 主要新增/修改文件：`tests/architecture/dependency_rules.py`、`tests/architecture/test_dependency_rules.py`、`tests/architecture/test_layering.py`（重构）、`TASKS.md`（勾选 `A-006`）、`PROGRESS.md`。
+* 验证命令：`uv run pytest -q`。
+* 验证结果（2026-07-22）：全部 17 项后端测试通过。`test_reverse_dependency_is_detected_when_injected` 注入 domain→application 反向依赖后检出恰好 1 条违例（失败），`test_passes_after_reverse_dependency_removed` 移除后通过，`test_allowed_forward_dependencies_pass` 正向依赖通过。注入失败、移除通过，验证通过。
+* Git commit：本次提交单独记录 `A-006` 交付物与进度更新。
+* 架构检查：规则检查器仅依赖标准库，不耦合被检对象；导入扫描逻辑仅此一处，无重复。
 
 ### A-005 建立后端模块分层模板
 
@@ -79,7 +88,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 5 个（`A-001`～`A-005`），剩余 321 个。
+`TASKS.md` 共有 326 个原子任务，已完成 6 个（`A-001`～`A-006`），剩余 320 个。
 
 已完成的非开发里程碑：
 
