@@ -9,8 +9,7 @@ SPEC.md 第 7.2 节要求金额使用 Decimal，与 PostgreSQL NUMERIC 对应；
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 # 人民币最小计量单位：分。
 _MONEY_QUANTUM = Decimal("0.01")
@@ -43,7 +42,7 @@ class Money:
         self._currency = currency
 
     @classmethod
-    def from_yuan(cls, raw: str | int | Decimal, currency: str = DEFAULT_CURRENCY) -> "Money":
+    def from_yuan(cls, raw: str | int | Decimal, currency: str = DEFAULT_CURRENCY) -> Money:
         """从元构造金额；拒绝 float，避免 0.1 这类值的二进制误差。
 
         接受字符串（推荐，如 "1234.56"）、整数（按元）与 Decimal；
@@ -67,17 +66,17 @@ class Money:
     def currency(self) -> str:
         return self._currency
 
-    def add(self, other: "Money") -> "Money":
+    def add(self, other: Money) -> Money:
         if other._currency != self._currency:
             raise MoneyError(f"币别不一致：{self._currency} 与 {other._currency}")
         return Money(self._amount + other._amount, self._currency)
 
-    def subtract(self, other: "Money") -> "Money":
+    def subtract(self, other: Money) -> Money:
         if other._currency != self._currency:
             raise MoneyError(f"币别不一致：{self._currency} 与 {other._currency}")
         return Money(self._amount - other._amount, self._currency)
 
-    def multiply(self, factor: str | int | Decimal) -> "Money":
+    def multiply(self, factor: str | int | Decimal) -> Money:
         """金额乘以系数（如数量、比例）；系数同样禁止 float。"""
         if isinstance(factor, float):
             raise MoneyError("金额乘数禁止使用 float")
@@ -93,7 +92,7 @@ class Money:
     def __hash__(self) -> int:
         return hash((self._amount, self._currency))
 
-    def __lt__(self, other: "Money") -> bool:
+    def __lt__(self, other: Money) -> bool:
         if other._currency != self._currency:
             raise MoneyError("比较金额要求币别一致")
         return self._amount < other._amount

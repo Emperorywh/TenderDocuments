@@ -12,11 +12,12 @@ from __future__ import annotations
 from tender_insight.modules.example.application import GreetingPolicy
 
 
-class DefaultGreetingPolicy:
+class DefaultGreetingPolicy(GreetingPolicy):
     """默认问候策略适配器（内存实现）。
 
-    实际业务模块的适配器在此处接入数据库、对象存储或模型网关；此处仅返回
-    固定消息，保持样例最小化且可脱离外部依赖运行。
+    显式继承 GreetingPolicy 端口，表明本类是该端口的具体实现；结构化类型
+    仍由 Protocol 保证。实际业务模块的适配器在此处接入数据库、对象存储或
+    模型网关；此处仅返回固定消息，保持样例最小化且可脱离外部依赖运行。
     """
 
     DEFAULT_MESSAGE: str = "工程已就绪，等待业务接入"

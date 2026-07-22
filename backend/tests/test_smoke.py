@@ -16,16 +16,16 @@ def test_package_importable() -> None:
 
 def test_runtime_dependencies_importable() -> None:
     """阶段 A/B/D 所依赖的核心运行时库均可导入。"""
-    import fastapi
-    import pydantic
-    import pydantic_settings
-    import sqlalchemy
     import alembic
     import celery
-    import redis
+    import fastapi
     import httpx
-    import structlog
     import jinja2
+    import pydantic
+    import pydantic_settings
+    import redis
+    import sqlalchemy
+    import structlog
 
     # 仅断言模块对象存在，避免在导入阶段耦合具体版本字符串。
     for module in (

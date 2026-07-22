@@ -83,5 +83,8 @@ def get_settings() -> Settings:
 
     首次调用即触发配置校验；关键配置缺失时抛 ValidationError，调用方（进程
     启动入口）应让其向上传播以“明确失败退出”，不在此处吞掉异常。
+
+    必填字段由 pydantic-settings 从环境变量注入，构造无需显式传参；静态类型
+    检查无法感知这一运行时来源，故在此处定向豁免 reportCallIssue。
     """
-    return Settings()
+    return Settings()  # pyright: ignore[reportCallIssue]

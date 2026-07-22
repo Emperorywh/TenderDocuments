@@ -35,12 +35,12 @@ class Uuid:
     value: uuid.UUID
 
     @classmethod
-    def new(cls) -> "Uuid":
+    def new(cls) -> Uuid:
         """生成一个新的随机（v4）UUID。"""
         return cls(uuid.uuid4())
 
     @classmethod
-    def from_str(cls, raw: str) -> "Uuid":
+    def from_str(cls, raw: str) -> Uuid:
         """从字符串解析 UUID；非法输入抛出 InvalidUuidError。
 
         同时接受带连字符的标准形式与 32 位十六进制紧凑形式（uuid.UUID 原生支持），

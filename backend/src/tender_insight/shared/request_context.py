@@ -17,8 +17,8 @@ import contextlib
 import contextvars
 import re
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
 
 # W3C traceparent 形如 00-<32 hex trace-id>-<16 hex span-id>-<flags>。
 # 仅提取其中的 trace-id 部分。
@@ -40,12 +40,12 @@ class RequestContext:
         return self.trace_id or self.request_id
 
     @classmethod
-    def new(cls, trace_id: str | None = None) -> "RequestContext":
+    def new(cls, trace_id: str | None = None) -> RequestContext:
         """生成一个带新 request_id 的上下文。"""
         return cls(request_id=uuid.uuid4().hex, trace_id=trace_id)
 
     @classmethod
-    def from_headers(cls, headers: dict[str, str]) -> "RequestContext":
+    def from_headers(cls, headers: dict[str, str]) -> RequestContext:
         """从入站请求头解析追踪上下文。
 
         优先使用客户端传入的 X-Request-ID（便于跨系统串联），否则生成新的；

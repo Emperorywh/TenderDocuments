@@ -17,7 +17,6 @@ from tender_insight.modules.example.domain.greeting import (
     InvalidGreetingTitle,
     compose_greeting,
 )
-from tender_insight.modules.example.infrastructure import DefaultGreetingPolicy
 
 
 def test_domain_assembles_greeting() -> None:

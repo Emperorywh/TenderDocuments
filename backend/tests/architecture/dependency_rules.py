@@ -25,11 +25,11 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 
-class ModuleLayer(str, Enum):
+class ModuleLayer(StrEnum):
     """模块内四层分层标识。值与目录名一致，便于按路径段判定。"""
 
     DOMAIN = "domain"

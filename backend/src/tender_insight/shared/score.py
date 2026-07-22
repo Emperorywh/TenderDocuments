@@ -37,7 +37,7 @@ class Score:
             raise ScoreError(f"分值不能为负：{self.value}")
 
     @classmethod
-    def from_value(cls, raw: str | int | Decimal) -> "Score":
+    def from_value(cls, raw: str | int | Decimal) -> Score:
         """从原始值构造分值；拒绝 float，避免二进制浮点误差。"""
         if isinstance(raw, float):
             raise ScoreError("分值禁止直接使用 float，请传入字符串或 Decimal")
@@ -46,12 +46,12 @@ class Score:
         except (ArithmeticError, ValueError) as cause:
             raise ScoreError(f"非法分值：{raw!r}") from cause
 
-    def add(self, other: "Score") -> "Score":
+    def add(self, other: Score) -> Score:
         """累加分值，保持 Decimal 精确性。"""
         return Score(self.value + other.value)
 
     @classmethod
-    def zero(cls) -> "Score":
+    def zero(cls) -> Score:
         return cls(Decimal("0"))
 
     def __str__(self) -> str:

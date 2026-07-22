@@ -12,7 +12,6 @@ import pytest
 from tender_insight.shared.money import DEFAULT_CURRENCY, Money, MoneyError
 from tender_insight.shared.score import Score, ScoreError
 
-
 # ---------------- 金额 ----------------
 
 

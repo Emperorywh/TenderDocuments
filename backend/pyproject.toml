@@ -56,3 +56,36 @@ packages = ["src/tender_insight"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-ra"
+
+# ---- Ruff：Lint 与导入整理（A-014）----
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# src 与 tests 一并检查；评估脚本等单独目录后续按需加入。
+extend-exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+# 规则集：
+# E/F：基础风格与潜在错误；I：导入排序；
+# UP：现代化语法；B：常见缺陷；SIM：简化写法；C4：推导式。
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+# 允许与 fastapi 注解风格一致的异常处理等少数宽松点。
+ignore = [
+    "B008",  # FastAPI 依赖项在默认参数中构造（框架约定）。
+    "UP046",  # 保留 TypeVar+Generic 写法，作为 pydantic 泛型模型的稳定模式。
+]
+
+[tool.ruff.lint.per-file-ignores]
+# 测试中允许使用断言与部分魔法字面量。
+"tests/**" = ["E501"]
+
+# ---- Pyright：静态类型检查（A-014）----
+[tool.pyright]
+include = ["src"]
+exclude = ["**/.venv", "**/__pycache__", "build", "dist"]
+venvPath = "."
+venv = ".venv"
+# 标准模式：在严格性与噪声之间取平衡；后续可随类型覆盖提升至 strict。
+typeCheckingMode = "standard"
+reportMissingImports = "warning"
+

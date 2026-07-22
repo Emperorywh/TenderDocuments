@@ -14,7 +14,7 @@ SPEC.md 第 7.2 节要求时间使用带时区类型，业务默认时区为 Asi
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Protocol
 from zoneinfo import ZoneInfo
 
@@ -43,7 +43,7 @@ class BusinessInstant:
             raise NaiveBusinessTimeError("业务时间必须带时区，拒绝 naive datetime")
 
     @classmethod
-    def now(cls, clock: "Clock | None" = None) -> "BusinessInstant":
+    def now(cls, clock: Clock | None = None) -> BusinessInstant:
         """取当前业务时间；可注入 Clock 以便测试使用固定时间。"""
         active_clock = clock if clock is not None else SystemClock()
         return cls(active_clock.now())
@@ -72,4 +72,4 @@ class SystemClock:
     """Clock 端口的系统实现：以 UTC 获取当前时间。"""
 
     def now(self) -> datetime:
-        return datetime.now(tz=timezone.utc)
+        return datetime.now(tz=UTC)

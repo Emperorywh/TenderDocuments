@@ -15,7 +15,7 @@ error_code。本模块提供：
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from tender_insight.shared.request_context import current_request_context
 
 
-class ErrorCode(str, Enum):
+class ErrorCode(StrEnum):
     """稳定错误码目录。新增错误必须在此登记，禁止散落魔法字符串。"""
 
     # 输入与值对象校验。

@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -36,7 +36,7 @@ def test_naive_datetime_is_rejected() -> None:
 
 def test_aware_datetime_accepted() -> None:
     """带时区输入被接受。"""
-    aware = datetime(2026, 7, 22, 10, 0, 0, tzinfo=timezone.utc)
+    aware = datetime(2026, 7, 22, 10, 0, 0, tzinfo=UTC)
     instant = BusinessInstant(aware)
     assert instant.value == aware
 
@@ -48,7 +48,7 @@ def test_business_timezone_is_shanghai() -> None:
 
 def test_utc_to_business_timezone_is_fixed() -> None:
     """UTC 时间转换为业务时区结果固定（东八区 +8）。"""
-    utc_noon = datetime(2026, 7, 22, 0, 0, 0, tzinfo=timezone.utc)
+    utc_noon = datetime(2026, 7, 22, 0, 0, 0, tzinfo=UTC)
     instant = BusinessInstant(utc_noon)
     converted = instant.in_business_timezone()
     # 2026-07-22 00:00:00 UTC == 2026-07-22 08:00:00 +08:00
@@ -58,13 +58,13 @@ def test_utc_to_business_timezone_is_fixed() -> None:
 
 def test_conversion_is_deterministic_across_calls() -> None:
     """同一瞬时多次转换结果一致。"""
-    instant = BusinessInstant(datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc))
+    instant = BusinessInstant(datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC))
     assert instant.in_business_timezone() == instant.in_business_timezone()
 
 
 def test_clock_injection_controls_now() -> None:
     """注入固定 Clock 后 now() 返回该固定时间，不依赖系统墙钟。"""
-    fixed = datetime(2026, 3, 1, 9, 30, 0, tzinfo=timezone.utc)
+    fixed = datetime(2026, 3, 1, 9, 30, 0, tzinfo=UTC)
     instant = BusinessInstant.now(clock=FixedClock(fixed))
     assert instant.value == fixed
     assert str(instant) == "2026-03-01T17:30:00+08:00"
