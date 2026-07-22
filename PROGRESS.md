@@ -2,32 +2,26 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；开发任务尚未开始。
-* 整体完成度：`0 / 326` 个原子开发任务完成（`0%`）；需求规格、技术计划、原子任务清单和 MVP 技术架构已提交。
-* 当前分支：`main`，HEAD 为 `ce7eb988b94b6855b4c7a4d97c4f7a6e3a65753a`，与 `origin/main` 一致（ahead 0、behind 0）。
-* 最后更新时间：2026-07-22 22:56（Asia/Shanghai）。
-* 当前是否存在阻塞：否。`A-001` 可以开始；根目录缺少 `CLAUDE.md` 是恢复资料风险，但不阻塞该任务。
+* 当前阶段：阶段 A——工程与架构基线；`A-001` 已完成，正在向 `A-002` 推进。
+* 整体完成度：`1 / 326` 个原子开发任务完成（约 `0.3%`）。
+* 当前分支：`main`，HEAD 为 `f071d28`，与 `origin/main` 一致（ahead 0、behind 0）。
+* 最后更新时间：2026-07-22（Asia/Shanghai）。
+* 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
 已确认的仓库状态：
 
-* 仓库只有 6 份 Markdown 文档，没有业务代码、工程目录、依赖锁文件、测试配置或构建产物。
-* 更新本文前，Git 工作区和暂存区均无修改；本次只更新 `PROGRESS.md`。
-* `TASKS.md` 中 326 个任务全部为 `[ ]`，没有任何任务满足完成条件。
-* 最近两个提交为：
-  * `ce7eb98`（2026-07-22 22:50:21 +08:00，`docs: 文档更新`）：新增 `SPEC.md`、`PLAN.md`、`TASKS.md`、原 `PROGRESS.md` 和 MVP 技术架构文档。
-  * `c27f8c6`（2026-07-22 21:42:20 +08:00，`init: 需求分析`）：新增原始需求分析文档。
+* 在 `A-001` 之前，仓库只有 6 份 Markdown 文档；`A-001` 新增 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/` 五个顶层目录，各含一份说明职责边界的 `README.md`。
+* `TASKS.md` 中 `A-001` 已勾选 `[x]`，其余 325 个任务仍为 `[ ]`。
 
 ## 2. 当前任务
 
-* Task 编号：`A-001`
-* Task 名称：创建单仓目录骨架
-* 当前状态：pending；尚未开始实现。本轮工作只修正进度文档，不计入 `A-001`。
-* 当前目标：在项目根目录创建 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/` 五个职责明确的顶层目录。
-* 已完成部分：任务交付物尚无完成部分；其前置规划基线已由提交 `ce7eb98` 落库。
-* 尚未完成：五个目录均不存在；尚未检查目录边界；尚未记录 `A-001` 的独立验证证据；`TASKS.md` 中 `A-001` 尚未勾选。
-* 涉及文件：计划新增 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/`；完成后需更新 `TASKS.md` 和 `PROGRESS.md`。当前尚未创建这些目录或文件。
-* 当前技术方案：严格按 `PLAN.md` 第 3.1 节建立单仓顶层边界；本任务只创建目录，不提前初始化 Python、React、数据库、基础设施或业务模块。后续后端模块采用 `domain / application / infrastructure / api` 分层，前后端与基础设施保持独立责任边界。
-* 验收标准：五个顶层目录全部存在且与 `PLAN.md` 一致；业务文件没有跨目录混放；没有夹带 `A-002`、`A-004` 等后续任务内容；验证证据可重复；架构检查通过后才可将 `A-001` 标记为 `[x]`。
+* Task 编号：`A-002`
+* Task 名称：初始化 Python 工程
+* 当前状态：待开始。
+* 前置依赖：`A-001`（已完成）。
+* 当前目标：在 `backend/` 下建立 `pyproject.toml` 与 uv 锁文件，使空环境可按锁文件安装成功。
+* 阻塞风险：当前环境未安装 `uv`，需先安装或提供等价验证手段；Python 解释器为 3.14，而 `PLAN.md` 锁定 3.12，初始化时需固定 `requires-python` 并核对兼容性。
+* 验收标准：空环境按锁文件安装成功；不夹带后续任务（A-003 入口、A-005 分层等）内容。
 
 需要持续遵守的约束：
 
@@ -39,9 +33,18 @@
 
 ## 3. 已完成任务
 
-当前无已完成开发任务。
+### A-001 创建单仓目录骨架
 
-`TASKS.md` 已确认共有 326 个原子任务，完成数为 0。提交 `ce7eb98` 完成的是规划文档入库，不代表 `A-001` 至 `L-015` 中任何开发任务完成，因此不为其虚构 Task 编号、测试命令或验证结果。
+* 实现摘要：严格按 `PLAN.md` 第 3.1 节在仓库根目录创建 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/` 五个顶层目录，每个目录放一份说明其职责、技术基线和边界的 `README.md`，使空目录可被 Git 追踪且边界可核对。本任务只建立目录边界，不初始化 Python（`A-002`）、React（`A-004`）或基础设施（阶段 A 开发服务）内容。
+* 主要修改/新增文件：`frontend/README.md`、`backend/README.md`、`evaluation/README.md`、`infra/README.md`、`docs/README.md`、`TASKS.md`（勾选 `A-001`）、`PROGRESS.md`。
+* 验证命令：`ls -1`、`git ls-files --others --exclude-standard`、`test -d frontend backend evaluation infra docs`。
+* 验证结果（2026-07-22）：五个目录全部存在且与 `PLAN.md` 第 3.1 节一致；`git ls-files --others --exclude-standard` 仅显示五个目录下的 `README.md`，无业务代码跨目录混放、无 `pyproject.toml` 或 React 工程文件等后续任务内容。验证通过。
+* Git commit：本次提交单独记录 `A-001` 交付物与进度更新。
+* 架构检查：未引入跨模块 ORM 写入、隐式状态、身份权限残留或魔法常量；未预埋用户/组织/角色/Token/RBAC/租户兼容分支。
+
+---
+
+`TASKS.md` 共有 326 个原子任务，已完成 1 个（`A-001`），剩余 325 个。
 
 已完成的非开发里程碑：
 
@@ -55,17 +58,17 @@
 
 按照当前依赖关系和实际可执行顺序：
 
-1. `A-001 创建单仓目录骨架`
+1. `A-002 初始化 Python 工程`（当前任务）
 
-   * 前置依赖：无。
-   * 主要工作：只创建 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/` 五个顶层目录并核对职责边界。
-   * 验收标准：目录与 `PLAN.md` 一致，业务内容没有跨目录混放，独立验证证据已记录。
+   * 前置依赖：`A-001`（已完成）。
+   * 主要工作：建立 `backend/pyproject.toml` 与 uv 锁文件。
+   * 验收标准：空环境按锁文件安装成功。
 
-2. `A-002 初始化 Python 工程` 与 `A-004 初始化 React 工程`
+2. `A-004 初始化 React 工程`
 
-   * 前置依赖：均依赖 `A-001`；二者可在依赖满足后独立实施。
-   * 主要工作：分别建立后端 `pyproject.toml`/uv 锁文件，以及 Vite/React/TypeScript 最小应用。
-   * 验收标准：Python 空环境可按锁文件安装；前端类型检查和生产构建分别通过。
+   * 前置依赖：`A-001`（已完成）。
+   * 主要工作：建立 Vite/React/TypeScript 最小应用。
+   * 验收标准：前端类型检查和生产构建分别通过。
 
 3. `A-003 建立后端最小启动入口`、`A-005 建立后端模块分层模板`、`A-013 建立强类型配置`、`A-014 建立后端质量检查配置`、`A-015 建立前端质量检查配置`
 
@@ -107,6 +110,18 @@
 * 当前结论：`SPEC.md` 第 17 章明确部分部署参数为非阻塞参数；当前没有证据表明这些依赖已经可用。
 * 建议处理方式：仅在相应任务依赖到达时按 `TASKS.md` 建立和验证，不提前用 Mock、fallback 或魔法常量掩盖缺失依赖。
 
+### 开发环境缺少 `uv` 与 `docker`（本会话确认）
+
+* 影响：`A-002` 的交付物明确要求 `backend/pyproject.toml` 与 **uv 锁文件**，而当前环境未安装 `uv`（`uv --version` 返回未找到）。`A-016/A-017/A-018/A-019` 要求通过 Docker Compose 提供 PostgreSQL、Redis、MinIO、OpenTelemetry，而当前环境未安装 `docker`。后续阶段还需 LibreOffice（`E-002`）、PaddleOCR（`E-012`）、DeepSeek 真实调用（`F-024`）、WeasyPrint（`H-016`）和 Linux 服务器（阶段 K）。
+* 当前结论：这是运行环境约束，不是代码缺陷。在受限环境下优先交付可在当前环境真实验证的产物（纯领域代码、配置文件、单元测试、前端构建），并对每个任务如实记录“已执行的验证”与“因外部依赖未就绪而待执行的验证”，不通过删除测试、跳过断言或伪造通过来规避。
+* 建议处理方式：`A-002` 起尝试用 `pip install uv` 或等价方式安装 `uv`；若仍不可用，则生成 `pyproject.toml` 并以 `pip` 在虚拟环境中安装依赖作为等价验证，同时保留 uv 作为生产锁文件工具的配置意图，在进度中明确说明。
+
+### Python 解释器版本与计划基线不一致
+
+* 影响：当前环境为 Python 3.14.4，`PLAN.md` 锁定 Python 3.12。
+* 当前结论：不影响 `A-001`；在 `A-002` 初始化时将通过 `requires-python` 固定基线，并尽量选择同时兼容 3.12/3.14 的依赖版本，避免把解释器差异写死成业务行为。
+* 建议处理方式：以 `requires-python = ">=3.12,<4"` 等约束声明基线；运行时若发现 3.14 不兼容某依赖，记录到本节并按 `TASKS.md` 第 1 节原则处理，不静默降级。
+
 ## 6. 失败尝试和重要决策
 
 ### 当前没有已确认的失败实现尝试
@@ -139,46 +154,39 @@
 
 ## 7. 阻塞事项
 
-* 当前无阻塞事项。
-
-`CLAUDE.md` 缺失和外部依赖尚未建立已列为风险，但都不阻止无前置依赖的 `A-001` 开始。
+* 环境约束（非代码缺陷）：`uv`、`docker` 未安装，详见第 5 节。这些影响后续需要锁文件或容器化基础设施的任务的“自动验证”，但不阻止先编写代码、配置和可在当前环境运行的测试。
 
 ## 8. 下一步执行计划
 
-1. 执行 `git status --short --branch`、`git log -5 --oneline --decorate`、`git diff --stat`，确认并保留当前仅有的 `PROGRESS.md` 未提交修改。
-2. 执行 `Test-Path .\frontend, .\backend, .\evaluation, .\infra, .\docs`，再次确认 `A-001` 的五个交付目录尚不存在。
-3. 在项目根目录创建 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/`；不要在本任务中初始化 Python、React 或基础设施内容。
-4. 执行 `Get-ChildItem -Force` 和 `rg --files -uu -g '!.git/**'`，核对顶层目录与现有文档，没有业务文件跨目录混放。
-5. 按 `TASKS.md` 第 14、16 节检查模块耦合、任务单一职责、技术债、隐式状态和 AI 可维护性。
-6. 在验证证据可重复后，将 `TASKS.md` 的 `A-001` 从 `[ ]` 改为 `[x]`，并同步更新 `PROGRESS.md` 的完成数、当前任务、验证命令和结果。
-7. 执行 `git diff --check` 和 `git diff -- TASKS.md PROGRESS.md`，修复空白错误并审查全部变更。
-8. 创建只包含 `A-001` 交付物及其任务/进度记录的 Git commit；提交前不得把 `A-002` 或 `A-004` 内容混入。
+1. 开始 `A-002 初始化 Python 工程`：在 `backend/` 下创建 `pyproject.toml`，固定 Python 与依赖基线；尝试安装 `uv` 生成锁文件，若不可用则以虚拟环境 `pip install` 作为等价验证并如实记录。
+2. 随后按依赖推进 `A-003`、`A-005`、`A-013`、`A-014`、`A-015` 等阶段 A 任务。
+3. 每完成一个任务：执行其独立验证、勾选 `TASKS.md`、更新 `PROGRESS.md`、创建单独 Git commit，并按 `TASKS.md` 第 14 节做架构检查。
 
 ## 9. 验证状态
 
-* [ ] 单元测试通过
-* [ ] 集成测试通过
-* [ ] 类型检查通过
-* [ ] Lint 通过
-* [ ] 构建通过
-* [ ] 核心功能人工验证通过
-* [x] Git diff 已审查
+* [ ] 单元测试通过（尚无工程）
+* [ ] 集成测试通过（尚无工程）
+* [ ] 类型检查通过（尚无工程）
+* [ ] Lint 通过（尚无工程）
+* [ ] 构建通过（尚无工程）
+* [ ] 核心功能人工验证通过（尚无业务功能）
+* [x] Git diff 已审查（A-001 交付物与文档变更）
 * [x] 无调试代码和临时文件
 * [x] 无敏感信息
-* [ ] 所有修改已提交
+* [ ] 所有修改已提交（A-001 提交中）
 
-说明：前六项没有对应工程或执行结果，因此保持未勾选；当前 `PROGRESS.md` 更新尚未提交。“Git diff 已审查”“无调试代码和临时文件”“无敏感信息”只描述本次文档改动的实际检查结果，不代表业务系统验收完成。
+说明：前六项没有对应工程或执行结果，因此保持未勾选。“Git diff 已审查”“无调试代码和临时文件”“无敏感信息”描述本次 `A-001` 改动的实际检查结果，不代表业务系统验收完成。
 
 ## 10. 新会话恢复指令
 
-新会话先完整阅读 `CLAUDE.md`（若存在；当前已确认缺失）、`SPEC.md`、`PLAN.md`、`TASKS.md`、`PROGRESS.md`，再检查 `git status --short --branch`、`git log -5 --oneline --decorate --stat`、`git diff` 和 `git diff --cached`。以代码、测试、Git 和任务勾选为事实来源，不把规划里程碑算作开发任务完成。当前应从 `A-001 创建单仓目录骨架` 的“确认五个目录不存在”之后继续，只创建 `frontend/`、`backend/`、`evaluation/`、`infra/`、`docs/` 并记录独立验证；不要引入身份/多租户、旧技术栈兼容、隐式状态、fallback，也不要提前混入后续工程初始化。开始编码前先执行：
+新会话先完整阅读 `CLAUDE.md`（若存在；当前已确认缺失）、`SPEC.md`、`PLAN.md`、`TASKS.md`、`PROGRESS.md`，再检查 `git status --short --branch`、`git log -5 --oneline --decorate --stat`、`git diff` 和 `git diff --cached`。以代码、测试、Git 和任务勾选为事实来源，不把规划里程碑算作开发任务完成。当前应从 `A-002 初始化 Python 工程` 继续。开始编码前先执行：
 
-```powershell
+```bash
 git status --short --branch
 git log -5 --oneline --decorate
 git diff --stat
 git diff --cached --stat
-Test-Path .\CLAUDE.md
+test -f CLAUDE.md && echo "CLAUDE.md exists" || echo "CLAUDE.md missing"
 rg -n '^\| \[[ x]\] [A-L]-\d{3} \|' TASKS.md
-Test-Path .\frontend, .\backend, .\evaluation, .\infra, .\docs
+uv --version 2>&1; docker --version 2>&1; python --version 2>&1; node --version 2>&1
 ```
