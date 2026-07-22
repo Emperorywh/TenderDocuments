@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-023` 已完成，正在向 `A-024` 推进。
-* 整体完成度：`23 / 326` 个原子开发任务完成（约 `7.1%`）。
-* 当前分支：`main`，HEAD 为 `d79acae`（A-022 提交）。
+* 当前阶段：**阶段 A（工程与架构基线）已完成**，共 24 项；正在进入阶段 B（项目生命周期与操作记录），下一任务 `B-001`。
+* 整体完成度：`24 / 326` 个原子开发任务完成（约 `7.4%`）。
+* 当前分支：`main`，HEAD 为 `e733f1a`（A-023 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,13 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-024`
-* Task 名称：验证首版无身份模块
+* Task 编号：`B-001`
+* Task 名称：建立 Project 数据迁移
 * 当前状态：待开始。
-* 前置依赖：`A-001`（已完成）。
-* 当前目标：验证仓库不存在 identity、auth、RBAC、用户或租户业务模块。
-* 验收标准：架构约束检查通过。
+* 前置依赖：`A-007`、`A-008`、`A-016`（已完成）。
+* 当前目标：建立 Project 表与约束。
+* 阻塞风险：迁移生成与运行需 PostgreSQL（本机无 Docker）。将生成 Alembic 迁移脚本与 SQLAlchemy 模型，结构以测试验证；运行时迁移到真实库待 Docker 就绪。
+* 验收标准：空库迁移成功且无用户、组织或租户字段。
 
 需要持续遵守的约束：
 
@@ -31,6 +32,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-024 验证首版无身份模块（阶段 A 完成）
+
+* 实现摘要：新增 `tests/architecture/test_no_identity.py`，作为长期护栏：扫描确认 modules/ 下无身份业务模块目录、源码无 organization_id/user_id/tenant_id/created_by/reviewed_by 身份字段、无 User/Organization/Tenant/Membership/Role/Session/Account 身份实体类定义。
+* 验证结果（2026-07-23）：`uv run pytest tests/architecture/test_no_identity.py` 3 项通过。阶段 A 收尾全量 112 项测试通过。
+* 阶段 A 总结：A-001～A-024 全部完成——单仓骨架、Python/React 工程、健康入口、四层分层与依赖规则、UUID/时间/金额分值/分页/追踪/错误共享内核、强类型配置、Ruff+Pyright+pytest/Vitest 质量门、PostgreSQL/Redis/MinIO/OTel 开发 Compose（结构验证，运行时待 Docker）、14 份 ADR、集中状态机与转换验证器、模块 README 模板、无身份护栏。
 
 ### A-023 建立模块 README 模板
 
@@ -181,7 +188,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 23 个（`A-001`～`A-023`），剩余 303 个。
+`TASKS.md` 共有 326 个原子任务，已完成 24 个（`A-001`～`A-024`，阶段 A 全部完成），剩余 302 个。
 
 已完成的非开发里程碑：
 
