@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-004` 已完成，正在向 `A-005` 推进。
-* 整体完成度：`4 / 326` 个原子开发任务完成（约 `1.2%`）。
-* 当前分支：`main`，HEAD 为 `2714c4b`（A-003 提交）。
+* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-005` 已完成，正在向 `A-006` 推进。
+* 整体完成度：`5 / 326` 个原子开发任务完成（约 `1.5%`）。
+* 当前分支：`main`，HEAD 为 `9aff899`（A-004 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-005`
-* Task 名称：建立后端模块分层模板
+* Task 编号：`A-006`
+* Task 名称：建立模块依赖检查
 * 当前状态：待开始。
-* 前置依赖：`A-002`（已完成）。
-* 当前目标：建立 domain、application、infrastructure、api 模块分层模板，示例 domain 不导入 Web、ORM、队列或供应商 SDK。
-* 验收标准：示例 domain 不导入 Web、ORM、队列或供应商 SDK。
+* 前置依赖：`A-005`（已完成）。
+* 当前目标：建立自动依赖规则；注入一条反向依赖后检查失败，移除后通过。
+* 验收标准：注入反向依赖后检查失败，移除后通过。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,15 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-005 建立后端模块分层模板
+
+* 实现摘要：建立 `tender_insight/modules/` 与参考样例模块 `modules/example/`，固化 domain / application / infrastructure / api 四层分层。domain（`greeting.py`）用标准库 dataclasses 建模值对象与领域服务，不导入任何框架；application 定义 `GreetingPolicy` 端口（Protocol）与 `greet` 用例；infrastructure 提供 `DefaultGreetingPolicy` 内存适配器；api 提供 `create_router()` 演示业务路由挂载方式（默认不挂入主应用，避免污染生产 API）。新增 `tests/architecture/test_layering.py`（AST 扫描 domain 源文件，断言不导入 Web/ORM/队列/供应商 SDK）与 `tests/modules/test_example.py`（四层端到端协作）。
+* 主要新增文件：`modules/__init__.py`、`modules/example/__init__.py`、`modules/example/domain/{__init__,greeting}.py`、`modules/example/application/__init__.py`、`modules/example/infrastructure/__init__.py`、`modules/example/api/__init__.py`、`tests/architecture/{__init__,test_layering}.py`、`tests/modules/{__init__,test_example}.py`、`TASKS.md`（勾选 `A-005`）、`PROGRESS.md`。
+* 验证命令：`uv run pytest -q`。
+* 验证结果（2026-07-22）：全部 14 项后端测试通过，其中 `test_domain_does_not_import_forbidden_frameworks` 与 `test_example_domain_uses_pure_stdlib_modeling` 直接证明示例 domain 不导入 Web、ORM、队列或供应商 SDK。验证通过。
+* Git commit：本次提交单独记录 `A-005` 交付物与进度更新。
+* 架构检查：domain 不依赖任何框架；端口定义在 application；依赖方向 api→application→domain 与 infrastructure→application/domain 一致；未引入身份残留或魔法常量。
 
 ### A-004 初始化 React 工程
 
@@ -70,7 +79,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 4 个（`A-001`～`A-004`），剩余 322 个。
+`TASKS.md` 共有 326 个原子任务，已完成 5 个（`A-001`～`A-005`），剩余 321 个。
 
 已完成的非开发里程碑：
 

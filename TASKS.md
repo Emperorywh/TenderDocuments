@@ -35,7 +35,7 @@
 | [x] A-002 | 初始化 Python 工程 | A-001 | backend/pyproject.toml 与 uv 锁文件 | 空环境按锁文件安装成功 |
 | [x] A-003 | 建立后端最小启动入口 | A-002 | FastAPI 健康检查入口 | 进程启动后健康检查返回固定契约 |
 | [x] A-004 | 初始化 React 工程 | A-001 | Vite、React、TypeScript 最小应用 | 类型检查与生产构建分别成功 |
-| [ ] A-005 | 建立后端模块分层模板 | A-002 | domain、application、infrastructure、api 模板 | 示例 domain 不导入 Web、ORM、队列或供应商 SDK |
+| [x] A-005 | 建立后端模块分层模板 | A-002 | domain、application、infrastructure、api 模板 | 示例 domain 不导入 Web、ORM、队列或供应商 SDK |
 | [ ] A-006 | 建立模块依赖检查 | A-005 | 自动依赖规则 | 注入一条反向依赖后检查失败，移除后通过 |
 | [ ] A-007 | 定义 UUID 值对象 | A-005 | UUID 生成与解析规则 | 合法值往返一致，非法值被稳定错误拒绝 |
 | [ ] A-008 | 定义业务时间值对象 | A-005 | 带时区时间与 Asia/Shanghai 规则 | 无时区输入被拒绝，时区转换结果固定 |
