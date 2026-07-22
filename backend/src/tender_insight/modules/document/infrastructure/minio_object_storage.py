@@ -66,6 +66,14 @@ class MinioObjectStorage:
                 return False
             raise
 
+    def size(self, key: ObjectKey) -> int:
+        """返回对象字节数；对象不存在抛 S3Error。"""
+        stat = self._client.stat_object(self._bucket, key.as_path())
+        # minio 将 size 标注为 int | None；真实对象必有大小，None 视为异常。
+        if stat.size is None:
+            raise RuntimeError(f"对象大小未知：{key.as_path()}")
+        return int(stat.size)
+
     def get(self, key: ObjectKey) -> bytes:
         """私有读取对象全部字节。
 

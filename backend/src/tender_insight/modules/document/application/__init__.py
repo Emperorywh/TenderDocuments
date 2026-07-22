@@ -62,6 +62,10 @@ class ObjectStorage(Protocol):
         """对象是否存在。"""
         ...
 
+    def size(self, key: ObjectKey) -> int:
+        """返回对象字节数；对象不存在时抛错。"""
+        ...
+
     def delete(self, key: ObjectKey) -> None:
         """删除对象（幂等）。"""
         ...
