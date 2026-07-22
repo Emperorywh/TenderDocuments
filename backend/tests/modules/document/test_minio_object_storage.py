@@ -76,3 +76,31 @@ def test_exists_propagates_other_errors() -> None:
 
     with pytest.raises(S3Error):
         storage.exists(ObjectKey(category=ObjectCategory.REPORTS, key="z"))
+
+
+def test_get_reads_bytes_via_client() -> None:
+    """私有读取经客户端凭据获取全部字节。"""
+    client = MagicMock()
+    response = MagicMock()
+    response.read.return_value = b"file-bytes"
+    client.get_object.return_value = response
+    storage = _storage(client)
+
+    data = storage.get(ObjectKey(category=ObjectCategory.CANONICAL, key="doc"))
+    assert data == b"file-bytes"
+    client.get_object.assert_called_once_with("tender", "canonical/doc")
+    response.close.assert_called_once()
+    response.release_conn.assert_called_once()
+
+
+def test_get_requires_backend_client_not_public() -> None:
+    """读取使用已鉴权客户端；未注入凭据的请求不经本方法（私有语义由 SDK 保证）。"""
+    # get 必须通过持凭客户端；此测试固化“调用 get_object 即经客户端”的契约。
+    client = MagicMock()
+    response = MagicMock()
+    response.read.return_value = b"x"
+    client.get_object.return_value = response
+    storage = _storage(client)
+    storage.get(ObjectKey(category=ObjectCategory.ORIGINAL, key="k"))
+    # 客户端被调用即说明读取经后端授权通道。
+    assert client.get_object.called

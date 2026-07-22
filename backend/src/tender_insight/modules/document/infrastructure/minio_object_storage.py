@@ -63,3 +63,19 @@ class MinioObjectStorage:
             if exc.code == "NoSuchKey":
                 return False
             raise
+
+    def get(self, key: ObjectKey) -> bytes:
+        """私有读取对象全部字节。
+
+        get_object 依赖客户端凭据（服务端处理用），不经后端授权无法直接读取，
+        对象默认私有（SPEC.md 第 4.2 节）。
+        """
+        response = self._client.get_object(self._bucket, key.as_path())
+        try:
+            return response.read()
+        finally:
+            # 释放底层连接，避免连接泄漏。
+            response.close()
+            release_conn = getattr(response, "release_conn", None)
+            if release_conn is not None:
+                release_conn()
