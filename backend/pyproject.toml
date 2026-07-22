@@ -73,6 +73,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
 ignore = [
     "B008",  # FastAPI 依赖项在默认参数中构造（框架约定）。
     "UP046",  # 保留 TypeVar+Generic 写法，作为 pydantic 泛型模型的稳定模式。
+    "UP047",  # 保留 TypeVar 泛型函数写法，与 UP046 一致。
 ]
 
 [tool.ruff.lint.per-file-ignores]
