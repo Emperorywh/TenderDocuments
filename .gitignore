@@ -1,0 +1,25 @@
+# Python —— 虚拟环境、字节码与构建产物
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+
+# 环境变量与本地密钥（密钥不得进入仓库，见 SPEC.md 第 12.3 节）
+.env
+.env.*
+!.env.example
+
+# Node / 前端构建产物（随 A-004 补充前端忽略规则）
+node_modules/
+
+# 操作系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

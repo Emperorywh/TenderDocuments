@@ -1,0 +1,58 @@
+[project]
+# 四川建筑施工招标文件智能解读与投标风险提示系统后端工程。
+# 后端采用 Python 模块化单体：FastAPI、SQLAlchemy 2、Celery 5，
+# PostgreSQL 作为业务状态唯一事实来源。详见仓库根目录 SPEC.md 与 PLAN.md。
+name = "tender-insight"
+version = "0.1.0"
+description = "四川建筑施工招标文件智能解读与投标风险提示系统后端"
+# README 指向 backend/README.md，描述后端职责与分层边界。
+readme = "README.md"
+# 生产基线锁定 Python 3.12（PLAN.md 第 2.2 节）。
+# 本地开发若仅有更高版本解释器，uv 可按 .python-version 拉取 3.12。
+requires-python = ">=3.12,<4"
+license = { text = "Proprietary" }
+authors = [{ name = "Tender Insight Team" }]
+
+# 基础运行时依赖：覆盖阶段 A 的入口、配置与质量检查，以及阶段 B 项目边界、
+# 阶段 D 异步底座所需的 Web、ORM、迁移、队列、缓存、HTTP 与日志能力。
+# 重型文档/OCR/报告依赖（PyMuPDF、pdfplumber、PaddleOCR、OpenCV、WeasyPrint）
+# 按任务边界在阶段 E、H 引入，不在初始化阶段拉入，以保证锁文件可解析、安装快速。
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "celery>=5.4",
+    "redis>=5.2",
+    "httpx>=0.28",
+    "structlog>=24.4",
+    "jinja2>=3.1",
+]
+
+[dependency-groups]
+# 开发期质量检查与测试工具：分别由 A-014 的 Ruff/Pyright/pytest 配置驱动。
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "pyright>=1.1.389",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# src 布局：可导入包为 tender_insight，对应 PLAN.md 第 3.1 节 src/ 下的
+# modules、model_gateway、rule_packs、workers、shared、bootstrap 与 main。
+packages = ["src/tender_insight"]
+
+# 最小 pytest 配置，使 backend/tests 可被发现与运行。
+# 完整质量检查配置（Ruff、Pyright 规则集）在 A-014 任务中补充。
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"

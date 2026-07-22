@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001` 已完成，正在向 `A-002` 推进。
-* 整体完成度：`1 / 326` 个原子开发任务完成（约 `0.3%`）。
-* 当前分支：`main`，HEAD 为 `f071d28`，与 `origin/main` 一致（ahead 0、behind 0）。
+* 当前阶段：阶段 A——工程与架构基线；`A-001`、`A-002` 已完成，正在向 `A-003` 推进。
+* 整体完成度：`2 / 326` 个原子开发任务完成（约 `0.6%`）。
+* 当前分支：`main`，HEAD 为 `afd0b93`（A-001 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,13 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-002`
-* Task 名称：初始化 Python 工程
+* Task 编号：`A-003`
+* Task 名称：建立后端最小启动入口
 * 当前状态：待开始。
-* 前置依赖：`A-001`（已完成）。
-* 当前目标：在 `backend/` 下建立 `pyproject.toml` 与 uv 锁文件，使空环境可按锁文件安装成功。
-* 阻塞风险：当前环境未安装 `uv`，需先安装或提供等价验证手段；Python 解释器为 3.14，而 `PLAN.md` 锁定 3.12，初始化时需固定 `requires-python` 并核对兼容性。
-* 验收标准：空环境按锁文件安装成功；不夹带后续任务（A-003 入口、A-005 分层等）内容。
+* 前置依赖：`A-002`（已完成）。
+* 当前目标：建立 FastAPI 健康检查入口，进程启动后健康检查返回固定契约。
+* 验收标准：进程启动后健康检查返回固定契约。
 
 需要持续遵守的约束：
 
@@ -32,6 +31,15 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-002 初始化 Python 工程
+
+* 实现摘要：在 `backend/` 下建立 `pyproject.toml`（hatchling 构建、src 布局、包名 `tender_insight`、`requires-python = ">=3.12,<4"`）、`.python-version`（3.12）、包骨架 `src/tender_insight/__init__.py`、测试包 `tests/` 与冒烟测试，以及根 `.gitignore`。声明阶段 A/B/D 所需核心运行时依赖（FastAPI、uvicorn、Pydantic 2、pydantic-settings、SQLAlchemy 2、Alembic、psycopg 3、Celery 5、redis、httpx、structlog、jinja2）与 dev 组（pytest、pytest-asyncio、ruff、pyright）。重型 OCR/文档/报告依赖按任务边界推迟到阶段 E/H。通过 `python -m pip install uv` 安装 uv 0.11.31。
+* 主要新增文件：`backend/pyproject.toml`、`backend/.python-version`、`backend/src/tender_insight/__init__.py`、`backend/tests/__init__.py`、`backend/tests/test_smoke.py`、`backend/uv.lock`、`.gitignore`、`TASKS.md`（勾选 `A-002`）、`PROGRESS.md`。
+* 验证命令：`uv lock`、`uv sync --frozen`、`uv run pytest -q`。
+* 验证结果（2026-07-22）：`uv lock` 解析 58 个包并写出 `uv.lock`，uv 自动按 `.python-version` 拉取 CPython 3.12.13；`uv sync --frozen` 在全新虚拟环境中按锁文件安装成功；`uv run pytest -q` 3 项冒烟测试全部通过（包可导入、核心运行时依赖可导入、Python 基线 >=3.12 满足）。验证通过。
+* Git commit：本次提交单独记录 `A-002` 交付物与进度更新。
+* 架构检查：未引入跨模块耦合、隐式状态、身份残留或魔法常量；未提前实现 A-003 入口或 A-005 分层。
 
 ### A-001 创建单仓目录骨架
 
@@ -44,7 +52,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 1 个（`A-001`），剩余 325 个。
+`TASKS.md` 共有 326 个原子任务，已完成 2 个（`A-001`、`A-002`），剩余 324 个。
 
 已完成的非开发里程碑：
 

@@ -32,7 +32,7 @@
 | 状态/ID | 原子任务 | 依赖 | 单一交付物 | 独立验证 |
 |---|---|---|---|---|
 | [x] A-001 | 创建单仓目录骨架 | 无 | frontend、backend、evaluation、infra、docs 目录 | 目录与 PLAN.md 一致，业务代码没有跨目录混放 |
-| [ ] A-002 | 初始化 Python 工程 | A-001 | backend/pyproject.toml 与 uv 锁文件 | 空环境按锁文件安装成功 |
+| [x] A-002 | 初始化 Python 工程 | A-001 | backend/pyproject.toml 与 uv 锁文件 | 空环境按锁文件安装成功 |
 | [ ] A-003 | 建立后端最小启动入口 | A-002 | FastAPI 健康检查入口 | 进程启动后健康检查返回固定契约 |
 | [ ] A-004 | 初始化 React 工程 | A-001 | Vite、React、TypeScript 最小应用 | 类型检查与生产构建分别成功 |
 | [ ] A-005 | 建立后端模块分层模板 | A-002 | domain、application、infrastructure、api 模板 | 示例 domain 不导入 Web、ORM、队列或供应商 SDK |
