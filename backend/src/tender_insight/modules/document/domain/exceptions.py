@@ -15,3 +15,11 @@ class UploadObjectError(DomainError):
     code = ErrorCode.UPLOAD_OBJECT_INVALID.value
     http_status = 400
     title = "上传对象校验失败"
+
+
+class FileTypeMismatchError(DomainError):
+    """文件类型（扩展名/MIME/魔数）不一致时抛出。"""
+
+    code = ErrorCode.FILE_TYPE_MISMATCH.value
+    http_status = 400
+    title = "文件类型不一致"
