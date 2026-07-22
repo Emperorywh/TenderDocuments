@@ -93,6 +93,21 @@ services:
         mc mb -p "local/$${MINIO_BUCKET}" || true &&
         mc anonymous set none "local/$${MINIO_BUCKET}" || true
 
+  otel_collector:
+    # OpenTelemetry Collector：接收 OTLP，开发期用 debug 导出器打印到控制台。
+    # Collector 为 distroless 镜像，无 shell/curl，故以 health_check 扩展
+    # （:13133）提供就绪探测，容器级 healthcheck 由其扩展承载。
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      # OTLP gRPC / HTTP 仅回环绑定。
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:13133:13133"
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

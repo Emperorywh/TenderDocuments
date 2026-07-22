@@ -1,0 +1,38 @@
+# OpenTelemetry Collector 开发配置（A-019）。
+#
+# 接收业务进程上报的 OTLP Trace/Metrics，经 batch 处理后用 debug 导出器
+# 打印到控制台，便于开发期确认“一条测试 Trace 能被 Collector 接收”。
+# 生产导出器（Jaeger/Prometheus/OTLP 后端）在阶段 J/K 配置。
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # 批处理降低上报次数；开发期默认配置即可。
+  batch: {}
+
+exporters:
+  # debug 导出器将 Trace/Metrics 打印到 stdout，便于开发核对。
+  debug:
+    verbosity: basic
+
+extensions:
+  # 健康检查扩展：暴露 :13133 供就绪探测。
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

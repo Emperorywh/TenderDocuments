@@ -14,6 +14,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 COMPOSE = REPO_ROOT / "infra" / "docker-compose.dev.yml"
+OTEL_CONFIG = REPO_ROOT / "infra" / "otel-collector-config.yaml"
 
 
 def _load() -> dict:
@@ -82,3 +83,22 @@ def test_minio_service_and_private_bucket_init() -> None:
     entry = str(init.get("entrypoint"))
     assert "mc mb" in entry, "初始化容器未创建 bucket"
     assert "anonymous set none" in entry, "未显式将 bucket 设为私有"
+
+
+def test_otel_collector_service_and_config() -> None:
+    """OTel Collector 服务存在并挂载配置，OTLP 端口仅回环（A-019）。"""
+    cfg = _load()
+    otel = cfg["services"].get("otel_collector")
+    assert otel is not None, "缺少 otel_collector 服务"
+    # 挂载外部配置文件。
+    mounts = str(otel.get("volumes", []))
+    assert "otel-collector-config.yaml" in mounts, "未挂载 collector 配置"
+    for binding in otel.get("ports", []):
+        assert str(binding).startswith("127.0.0.1:"), f"端口绑定非回环：{binding}"
+
+    # Collector 配置具备 OTLP 接收器与 traces 管线，可接收测试 Trace。
+    otel_cfg = yaml.safe_load(OTEL_CONFIG.read_text(encoding="utf-8"))
+    assert "otlp" in otel_cfg.get("receivers", {}), "缺少 otlp 接收器"
+    pipelines = otel_cfg.get("service", {}).get("pipelines", {})
+    assert "traces" in pipelines, "缺少 traces 管线"
+    assert "otlp" in pipelines["traces"]["receivers"]
