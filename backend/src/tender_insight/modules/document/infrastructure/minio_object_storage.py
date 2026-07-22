@@ -8,6 +8,7 @@ minio.Minio 客户端。真实 MinIO 集成验证依赖 Docker（阶段 A-018）
 
 from __future__ import annotations
 
+from datetime import timedelta
 from io import BytesIO
 
 from minio import Minio
@@ -79,3 +80,15 @@ class MinioObjectStorage:
             release_conn = getattr(response, "release_conn", None)
             if release_conn is not None:
                 release_conn()
+
+    def presigned_get_url(self, key: ObjectKey, *, expires_in_seconds: int) -> str:
+        """生成短期授权读取地址。
+
+        到期后地址失效（由 MinIO 按 expires 校验）。注意：日志不得记录完整签名
+        URL，该脱敏在可观测性层（J-003）实现；本方法只返回地址。
+        """
+        return self._client.presigned_get_object(
+            self._bucket,
+            key.as_path(),
+            expires=timedelta(seconds=expires_in_seconds),
+        )

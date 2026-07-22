@@ -104,3 +104,22 @@ def test_get_requires_backend_client_not_public() -> None:
     storage.get(ObjectKey(category=ObjectCategory.ORIGINAL, key="k"))
     # 客户端被调用即说明读取经后端授权通道。
     assert client.get_object.called
+
+
+def test_presigned_get_url_passes_expiry() -> None:
+    """预签名地址以指定有效期生成；到期由 MinIO 校验失效。"""
+    from datetime import timedelta
+
+    client = MagicMock()
+    client.presigned_get_object.return_value = "https://minio.local/tender/original/k?signature=..."
+    storage = _storage(client)
+
+    url = storage.presigned_get_url(
+        ObjectKey(category=ObjectCategory.ORIGINAL, key="k"), expires_in_seconds=90
+    )
+    assert url == client.presigned_get_object.return_value
+    assert url.startswith("https://")
+    args, kwargs = client.presigned_get_object.call_args
+    assert args[0] == "tender"
+    assert args[1] == "original/k"
+    assert kwargs["expires"] == timedelta(seconds=90)
