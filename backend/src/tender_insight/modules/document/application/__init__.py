@@ -133,6 +133,9 @@ class DocumentRepository(Protocol):
     def get(self, document_id: Uuid) -> Document | None:
         ...
 
+    def save(self, document: Document) -> None:
+        ...
+
 
 class DocumentVersionRepository(Protocol):
     """文件版本仓储端口。"""

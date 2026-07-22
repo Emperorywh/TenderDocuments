@@ -41,6 +41,21 @@ class SqlAlchemyDocumentRepository:
             name=orm.name,
         )
 
+    def save(self, document: Document) -> None:
+        orm = self._session.get(DocumentModel, document.id.value)
+        if orm is None:
+            self._session.add(
+                DocumentModel(
+                    id=document.id.value,
+                    project_id=document.project_id.value,
+                    business_type=document.business_type.value,
+                    name=document.name,
+                )
+            )
+            return
+        orm.business_type = document.business_type.value
+        orm.name = document.name
+
 
 class SqlAlchemyDocumentVersionRepository:
     def __init__(self, session: Session) -> None:
