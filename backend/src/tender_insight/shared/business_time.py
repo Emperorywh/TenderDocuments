@@ -18,14 +18,19 @@ from datetime import UTC, datetime
 from typing import Protocol
 from zoneinfo import ZoneInfo
 
+from tender_insight.shared.domain_error import DomainError
+from tender_insight.shared.error_codes import ErrorCode
+
 # 业务默认时区：四川位于东八区，统一使用 Asia/Shanghai。
 BUSINESS_TIMEZONE: ZoneInfo = ZoneInfo("Asia/Shanghai")
 
 
-class NaiveBusinessTimeError(ValueError):
+class NaiveBusinessTimeError(DomainError):
     """传入无时区的时间时抛出的稳定错误。"""
 
-    code: str = "NAIVE_BUSINESS_TIME"
+    code = ErrorCode.NAIVE_BUSINESS_TIME.value
+    http_status = 400
+    title = "无时区时间"
 
 
 @dataclass(frozen=True)

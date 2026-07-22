@@ -11,6 +11,16 @@ from sqlalchemy.orm import Session
 from tender_insight.bootstrap.config import get_settings
 from tender_insight.bootstrap.db import get_object_storage, get_session
 from tender_insight.modules.document.application import ObjectStorage
+from tender_insight.modules.document.application.confirm_document_type import (
+    ConfirmDocumentTypeCommand,
+    ConfirmDocumentTypeResult,
+    ConfirmDocumentTypeUseCase,
+)
+from tender_insight.modules.document.application.confirm_published_date import (
+    ConfirmPublishedDateCommand,
+    ConfirmPublishedDateResult,
+    ConfirmPublishedDateUseCase,
+)
 from tender_insight.modules.document.application.create_upload_session import (
     CreateUploadSessionCommand,
     CreateUploadSessionUseCase,
@@ -19,6 +29,10 @@ from tender_insight.modules.document.application.create_upload_session import (
 from tender_insight.modules.document.application.list_documents import (
     DocumentListItem,
     list_documents,
+)
+from tender_insight.modules.document.infrastructure.document_repositories import (
+    SqlAlchemyDocumentRepository,
+    SqlAlchemyDocumentVersionRepository,
 )
 from tender_insight.modules.document.infrastructure.upload_session_repository import (
     SqlAlchemyUploadSessionRepository,
@@ -78,6 +92,44 @@ def create_router() -> APIRouter:
             session,
             Uuid.from_str(project_id),
             PageRequest(page=page, page_size=page_size),
+        )
+
+    @router.patch(
+        "/documents/{document_id}/type",
+        response_model=ConfirmDocumentTypeResult,
+    )
+    def confirm_document_type(
+        document_id: str,
+        command: ConfirmDocumentTypeCommand,
+        session: Session = Depends(get_session),
+    ) -> ConfirmDocumentTypeResult:
+        """确认文件业务类型。"""
+        return ConfirmDocumentTypeUseCase(
+            repository=SqlAlchemyDocumentRepository(session), session=session
+        ).execute(
+            ConfirmDocumentTypeCommand(
+                document_id=document_id,
+                business_type=command.business_type,
+            )
+        )
+
+    @router.patch(
+        "/documents/versions/{version_id}/published-date",
+        response_model=ConfirmPublishedDateResult,
+    )
+    def confirm_published_date(
+        version_id: str,
+        command: ConfirmPublishedDateCommand,
+        session: Session = Depends(get_session),
+    ) -> ConfirmPublishedDateResult:
+        """确认文件版本发布日期（须带时区）。"""
+        return ConfirmPublishedDateUseCase(
+            repository=SqlAlchemyDocumentVersionRepository(session), session=session
+        ).execute(
+            ConfirmPublishedDateCommand(
+                version_id=version_id,
+                published_at=command.published_at,
+            )
         )
 
     return router
