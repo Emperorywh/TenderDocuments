@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from tender_insight.shared.request_context import current_request_context
+from tender_insight.shared.state_transitions import InvalidTransitionError
 
 
 class ErrorCode(StrEnum):
@@ -99,12 +100,23 @@ class ProblemDetail(BaseModel):
 def problem_from_error(exc: Exception) -> ProblemDetail:
     """把任意异常映射为 ProblemDetail。
 
-    DomainError 子类按其声明的 error_code/status 映射；其它异常统一归为
-    INTERNAL_ERROR（500），避免把内部异常细节直接暴露给调用方。
+    DomainError 子类按其声明的 error_code/status 映射；状态转换非法错误
+    （InvalidTransitionError，来自纯层）映射为 409 INVALID_STATE_TRANSITION；
+    其它异常统一归为 INTERNAL_ERROR（500），避免把内部异常细节直接暴露给调用方。
     """
     ctx = current_request_context()
     instance = ctx.request_id if ctx is not None else None
     trace_id = ctx.effective_trace_id() if ctx is not None else None
+
+    if isinstance(exc, InvalidTransitionError):
+        return ProblemDetail(
+            title="非法状态转换",
+            status=409,
+            detail=str(exc),
+            error_code=ErrorCode.INVALID_STATE_TRANSITION.value,
+            instance=instance,
+            trace_id=trace_id,
+        )
 
     if isinstance(exc, DomainError):
         return ProblemDetail(
@@ -132,6 +144,15 @@ def add_problem_exception_handler(app: FastAPI) -> None:
 
     @app.exception_handler(DomainError)
     async def _handle_domain_error(_: Request, exc: DomainError) -> JSONResponse:
+        problem = problem_from_error(exc)
+        return JSONResponse(
+            status_code=problem.status,
+            content=problem.model_dump(exclude_none=True),
+            media_type="application/problem+json",
+        )
+
+    @app.exception_handler(InvalidTransitionError)
+    async def _handle_invalid_transition(_: Request, exc: InvalidTransitionError) -> JSONResponse:
         problem = problem_from_error(exc)
         return JSONResponse(
             status_code=problem.status,
