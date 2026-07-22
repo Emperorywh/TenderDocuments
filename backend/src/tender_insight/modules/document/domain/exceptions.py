@@ -55,3 +55,11 @@ class DuplicateFileError(DomainError):
     code = ErrorCode.DUPLICATE_FILE.value
     http_status = 409
     title = "重复文件"
+
+
+class FileLimitExceededError(DomainError):
+    """超出部署文件限额（大小/数量/总字节）时抛出。"""
+
+    code = ErrorCode.FILE_LIMIT_EXCEEDED.value
+    http_status = 400
+    title = "文件限额超限"
