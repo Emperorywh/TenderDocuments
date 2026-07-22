@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-007` 已完成，正在向 `A-008` 推进。
-* 整体完成度：`7 / 326` 个原子开发任务完成（约 `2.1%`）。
-* 当前分支：`main`，HEAD 为 `2bb29d0`（A-006 提交）。
+* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-008` 已完成，正在向 `A-009` 推进。
+* 整体完成度：`8 / 326` 个原子开发任务完成（约 `2.5%`）。
+* 当前分支：`main`，HEAD 为 `c0cee51`（A-007 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-008`
-* Task 名称：定义业务时间值对象
+* Task 编号：`A-009`
+* Task 名称：定义金额与分值值对象
 * 当前状态：待开始。
 * 前置依赖：`A-005`（已完成）。
-* 当前目标：定义带时区时间与 Asia/Shanghai 规则。
-* 验收标准：无时区输入被拒绝，时区转换结果固定。
+* 当前目标：定义 Decimal 精度和舍入规则。
+* 验收标准：固定金额、分值样本无浮点误差。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,14 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-008 定义业务时间值对象
+
+* 实现摘要：新增 `shared/business_time.py`，定义业务时区常量 `BUSINESS_TIMEZONE`（Asia/Shanghai）、`BusinessInstant` 值对象（强制带时区，构造即拒绝 naive 输入，`in_business_timezone()` 确定性转换，`now(clock)` 可注入）、`NaiveBusinessTimeError`（code=`NAIVE_BUSINESS_TIME`）与 `Clock` 端口 + `SystemClock` 实现。仅依赖标准库 datetime/zoneinfo。
+* 主要新增文件：`shared/business_time.py`、`tests/shared/test_business_time.py`、`TASKS.md`、`PROGRESS.md`。
+* 验证命令：`uv run pytest tests/shared -q`。
+* 验证结果（2026-07-22）：18 项共享测试通过（10 UUID + 8 时间）。naive 输入抛稳定错误；UTC 00:00→业务时区 08:00+08:00 固定；Clock 注入可控 now()。验证通过。
+* Git commit：本次提交单独记录 `A-008`。
 
 ### A-007 定义 UUID 值对象
 
@@ -97,7 +105,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 7 个（`A-001`～`A-007`），剩余 319 个。
+`TASKS.md` 共有 326 个原子任务，已完成 8 个（`A-001`～`A-008`），剩余 318 个。
 
 已完成的非开发里程碑：
 
