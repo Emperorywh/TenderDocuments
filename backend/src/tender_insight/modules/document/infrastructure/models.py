@@ -60,3 +60,35 @@ class DocumentModel(Base, TimestampMixin):
     business_type: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
+
+class DocumentVersionModel(Base, TimestampMixin):
+    """document_versions 表：不可变文件版本（C-015）。
+
+    核心原始元数据（original_object_key/sha256/size_bytes/mime/version_number/
+    document_id）一经创建不可覆盖更新；仅 status、canonical_object_key、page_count
+    等处理态字段可演进（SPEC.md 第 5.2、6.4 节）。
+    """
+
+    __tablename__ = "document_versions"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    document_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("documents.id"),
+        nullable=False,
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    # 原始对象键（original 分区），不可变。
+    original_object_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    mime: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    # 处理态字段（可演进）。
+    canonical_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    published_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    effect_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
