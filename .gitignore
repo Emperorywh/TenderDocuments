@@ -9,6 +9,9 @@ dist/
 .ruff_cache/
 .pyright/
 
+# 本地临时数据库文件（测试占位 DATABASE_URL 产物，不入库）
+*.db
+
 # 环境变量与本地密钥（密钥不得进入仓库，见 SPEC.md 第 12.3 节）
 .env
 .env.*

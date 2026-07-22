@@ -54,3 +54,24 @@ def get_session() -> Iterator[Session]:
     finally:
         session.close()
 
+
+# 对象存储单例占位；启动期注入，测试通过依赖覆盖替换。
+_object_storage: object | None = None
+
+
+def configure_object_storage(storage: object) -> None:
+    """启动期注入 ObjectStorage 实例。"""
+    global _object_storage
+    _object_storage = storage
+
+
+def get_object_storage() -> object:
+    """FastAPI 依赖：返回已配置的 ObjectStorage。
+
+    未配置时抛 RuntimeError；类型为 object 以保持 bootstrap 不依赖 document
+    application 端口的具体类型，由调用方按端口使用。
+    """
+    if _object_storage is None:
+        raise RuntimeError("对象存储未配置，请先调用 configure_object_storage")
+    return _object_storage
+

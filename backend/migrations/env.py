@@ -33,10 +33,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 连接串优先使用 alembic.ini 的 sqlalchemy.url，否则从环境变量读取。
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+# 连接串优先使用显式设置（测试经 cfg 注入），否则从环境变量读取（生产）。
+if not config.get_main_option("sqlalchemy.url"):
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url:
+        config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata
 

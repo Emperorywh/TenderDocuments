@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,23 @@ from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
+
+# 测试环境默认配置：使 get_settings() 可在无 .env 的测试进程中成功构造。
+# 这些是测试占位值，不接触任何真实服务。
+_DEFAULT_TEST_ENV = {
+    "DATABASE_URL": "sqlite:///test.db",
+    "REDIS_URL": "redis://localhost:6379/0",
+    "S3_ENDPOINT_URL": "http://localhost:9000",
+    "S3_ACCESS_KEY": "test-access-key",
+    "S3_SECRET_KEY": "test-secret-key",
+    "S3_BUCKET": "tender",
+    "DEEPSEEK_BASE_URL": "http://localhost",
+    "DEEPSEEK_API_KEY": "test-deepseek-key",
+    "DEEPSEEK_FAST_MODEL": "fast-model-id",
+    "DEEPSEEK_STRONG_MODEL": "strong-model-id",
+}
+for _key, _value in _DEFAULT_TEST_ENV.items():
+    os.environ.setdefault(_key, _value)
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 

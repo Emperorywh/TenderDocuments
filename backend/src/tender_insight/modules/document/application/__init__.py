@@ -82,7 +82,7 @@ class ObjectStorage(Protocol):
 class UploadSessionRepository(Protocol):
     """上传会话仓储端口。"""
 
-    def add(self, session: UploadSession) -> None:
+    def add(self, upload_session: UploadSession) -> None:
         ...
 
     def get(self, session_id: Uuid) -> UploadSession | None:
