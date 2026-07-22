@@ -7,8 +7,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
 from tender_insight.modules.document.domain.exceptions import FileLimitExceededError
+
+
+class _LimitSettings(Protocol):
+    """限额所需的最小配置结构（结构化匹配 bootstrap Settings，领域不导入 bootstrap）。"""
+
+    max_file_bytes: int
+    max_files_per_project: int
+    max_project_bytes: int
 
 
 @dataclass(frozen=True)
@@ -20,7 +29,7 @@ class FileLimits:
     max_project_bytes: int
 
     @classmethod
-    def from_settings(cls, settings: object) -> FileLimits:
+    def from_settings(cls, settings: _LimitSettings) -> FileLimits:
         """从强类型配置（A-013 Settings 或同类对象）构造，领域不硬编码限额。"""
         return cls(
             max_file_bytes=int(settings.max_file_bytes),
