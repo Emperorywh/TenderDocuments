@@ -17,6 +17,32 @@ from tender_insight.modules.document.domain.upload_session import UploadSession
 from tender_insight.shared.identifiers import Uuid
 
 
+class SecurityScanResult(StrEnum):
+    """安全扫描结果。"""
+
+    CLEAN = "CLEAN"
+    SUSPICIOUS = "SUSPICIOUS"
+
+
+@dataclass(frozen=True)
+class SecurityScanOutcome:
+    """安全扫描结果详情。"""
+
+    result: SecurityScanResult
+    reason: str | None = None
+
+
+class FileSecurityScanner(Protocol):
+    """文件安全扫描端口（SPEC.md 第 11.1 节 quarantine 安全检查）。
+
+    由基础设施实现（如 ClamAV/杀毒适配器）；领域层不依赖具体扫描器。
+    """
+
+    def scan(self, data: bytes, *, filename: str, mime: str) -> SecurityScanOutcome:
+        """扫描文件字节，返回 CLEAN 或 SUSPICIOUS。"""
+        ...
+
+
 class ObjectCategory(StrEnum):
     """对象存储分区（SPEC.md 第 6.4 节）。
 
