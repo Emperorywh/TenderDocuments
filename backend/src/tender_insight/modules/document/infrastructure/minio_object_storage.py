@@ -94,6 +94,14 @@ class MinioObjectStorage:
             expires=timedelta(seconds=expires_in_seconds),
         )
 
+    def presigned_put_url(self, key: ObjectKey, *, expires_in_seconds: int) -> str:
+        """生成短期授权上传地址（客户端直传）；到期由 MinIO 校验失效。"""
+        return self._client.presigned_put_object(
+            self._bucket,
+            key.as_path(),
+            expires=timedelta(seconds=expires_in_seconds),
+        )
+
     def move(self, source: ObjectKey, destination: ObjectKey) -> None:
         """移动对象：复制到目标键后删除源键，使源键失效。"""
         self._client.copy_object(

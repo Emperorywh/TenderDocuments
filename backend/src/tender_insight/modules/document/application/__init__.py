@@ -11,6 +11,9 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
+from tender_insight.modules.document.domain.upload_session import UploadSession
+from tender_insight.shared.identifiers import Uuid
+
 
 class ObjectCategory(StrEnum):
     """对象存储分区（SPEC.md 第 6.4 节）。
@@ -69,4 +72,18 @@ class ObjectStorage(Protocol):
 
     def presigned_get_url(self, key: ObjectKey, *, expires_in_seconds: int) -> str:
         """生成短期授权读取地址；到期失效。"""
+        ...
+
+    def presigned_put_url(self, key: ObjectKey, *, expires_in_seconds: int) -> str:
+        """生成短期授权上传地址（客户端直传）；到期失效。"""
+        ...
+
+
+class UploadSessionRepository(Protocol):
+    """上传会话仓储端口。"""
+
+    def add(self, session: UploadSession) -> None:
+        ...
+
+    def get(self, session_id: Uuid) -> UploadSession | None:
         ...
