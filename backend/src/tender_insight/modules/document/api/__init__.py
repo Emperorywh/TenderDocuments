@@ -21,6 +21,11 @@ from tender_insight.modules.document.application.confirm_published_date import (
     ConfirmPublishedDateResult,
     ConfirmPublishedDateUseCase,
 )
+from tender_insight.modules.document.application.create_document_relation import (
+    CreateDocumentRelationCommand,
+    CreateDocumentRelationResult,
+    CreateDocumentRelationUseCase,
+)
 from tender_insight.modules.document.application.create_upload_session import (
     CreateUploadSessionCommand,
     CreateUploadSessionUseCase,
@@ -29,6 +34,9 @@ from tender_insight.modules.document.application.create_upload_session import (
 from tender_insight.modules.document.application.list_documents import (
     DocumentListItem,
     list_documents,
+)
+from tender_insight.modules.document.infrastructure.document_relation_repository import (
+    SqlAlchemyDocumentRelationRepository,
 )
 from tender_insight.modules.document.infrastructure.document_repositories import (
     SqlAlchemyDocumentRepository,
@@ -131,5 +139,24 @@ def create_router() -> APIRouter:
                 published_at=command.published_at,
             )
         )
+
+    @router.post(
+        "/documents/relations",
+        response_model=CreateDocumentRelationResult,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_relation(
+        command: CreateDocumentRelationCommand,
+        session: Session = Depends(get_session),
+    ) -> CreateDocumentRelationResult:
+        """创建文件间替代/补充/引用关系。
+
+        循环替代返回 409 CONFLICT；非法跨项目或自引用返回 409。
+        """
+        return CreateDocumentRelationUseCase(
+            document_repository=SqlAlchemyDocumentRepository(session),
+            relation_repository=SqlAlchemyDocumentRelationRepository(session),
+            session=session,
+        ).execute(command)
 
     return router
