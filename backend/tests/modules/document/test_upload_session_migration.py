@@ -47,14 +47,28 @@ def test_project_fk_present(engine) -> None:
 def test_can_persist_session_with_expiry(session_factory) -> None:
     """可写入带过期时间的会话；过期字段为必填。"""
     from tender_insight.modules.document.infrastructure.models import UploadSessionModel
+    from tender_insight.modules.project.infrastructure.models import ProjectModel
 
     session = session_factory()
     try:
+        # 先建项目以满足外键约束。
+        project_id = uuid4()
+        session.execute(
+            ProjectModel.__table__.insert().values(
+                id=project_id,
+                name="p",
+                region="成都",
+                industry="房建",
+                project_type="施工",
+                lifecycle_state="ACTIVE",
+                version=1,
+            )
+        )
         now = datetime(2026, 7, 23, tzinfo=UTC)
         session.execute(
             UploadSessionModel.__table__.insert().values(
                 id=uuid4(),
-                project_id=uuid4(),
+                project_id=project_id,
                 declared_filename="tender.pdf",
                 declared_size_bytes=1024,
                 declared_mime="application/pdf",

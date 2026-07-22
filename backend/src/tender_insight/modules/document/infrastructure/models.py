@@ -12,7 +12,7 @@ from uuid import UUID
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from tender_insight.shared.orm import Base
+from tender_insight.shared.orm import Base, TimestampMixin
 
 
 class UploadSessionModel(Base):
@@ -39,3 +39,24 @@ class UploadSessionModel(Base):
     completed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+
+class DocumentModel(Base, TimestampMixin):
+    """documents 表：逻辑文件（招标文件/澄清/补遗/附件等）。
+
+    一个项目下有多个逻辑文件；每个逻辑文件有多个不可变版本（DocumentVersion，
+    C-015）。逻辑文件必须归属一个 project_id（SPEC.md 第 4.3、6.4 节）。
+    """
+
+    __tablename__ = "documents"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    project_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("projects.id"),
+        nullable=False,
+    )
+    # 业务类型（DocumentBusinessType 取值）。
+    business_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+

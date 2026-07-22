@@ -55,6 +55,16 @@ def engine(sqlite_db_url: str) -> Engine:
     """应用迁移后的 SQLite 引擎。"""
     _apply_migrations(sqlite_db_url)
     eng = create_engine(sqlite_db_url, future=True)
+
+    # 启用 SQLite 外键约束，使测试与生产 PostgreSQL 的 FK 行为一致。
+    from sqlalchemy import event
+
+    @event.listens_for(eng, "connect")
+    def _enable_foreign_keys(dbapi_connection, _connection_record) -> None:  # noqa: ANN001
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     try:
         yield eng
     finally:
