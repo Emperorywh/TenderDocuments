@@ -39,3 +39,11 @@ class CorruptFileError(DomainError):
     code = ErrorCode.CORRUPT_FILE.value
     http_status = 400
     title = "损坏文件"
+
+
+class CompressionBombError(DomainError):
+    """压缩异常（解压后体积或压缩比超限，疑似压缩炸弹）时抛出。"""
+
+    code = ErrorCode.COMPRESSION_BOMB.value
+    http_status = 400
+    title = "压缩异常"
