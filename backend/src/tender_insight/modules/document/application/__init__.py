@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
+from tender_insight.modules.document.domain.document import Document
+from tender_insight.modules.document.domain.document_version import DocumentVersion
 from tender_insight.modules.document.domain.upload_session import UploadSession
 from tender_insight.shared.identifiers import Uuid
 
@@ -90,4 +92,32 @@ class UploadSessionRepository(Protocol):
         ...
 
     def get(self, session_id: Uuid) -> UploadSession | None:
+        ...
+
+    def save(self, upload_session: UploadSession) -> None:
+        ...
+
+
+class DocumentRepository(Protocol):
+    """逻辑文件仓储端口。"""
+
+    def add(self, document: Document) -> None:
+        ...
+
+    def get(self, document_id: Uuid) -> Document | None:
+        ...
+
+
+class DocumentVersionRepository(Protocol):
+    """文件版本仓储端口。"""
+
+    def add(self, version: DocumentVersion) -> None:
+        ...
+
+    def next_version_number(self, document_id: Uuid) -> int:
+        """返回该逻辑文件下一个版本号（从 1 起）。"""
+        ...
+
+    def exists_by_sha256_in_project(self, project_id: Uuid, sha256: str) -> bool:
+        """项目内是否已存在同哈希版本（重复检测，C-018）。"""
         ...

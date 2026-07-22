@@ -29,6 +29,14 @@ class SqlAlchemyUploadSessionRepository:
         orm = self._session.get(UploadSessionModel, session_id.value)
         return _to_domain(orm) if orm is not None else None
 
+    def save(self, upload_session: UploadSession) -> None:
+        orm = self._session.get(UploadSessionModel, upload_session.id.value)
+        if orm is None:
+            self._session.add(_to_orm(upload_session))
+            return
+        orm.status = upload_session.status.value
+        orm.completed_at = upload_session.completed_at
+
 
 def _to_orm(upload_session: UploadSession) -> UploadSessionModel:
     return UploadSessionModel(

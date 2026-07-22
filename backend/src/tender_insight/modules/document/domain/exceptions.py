@@ -47,3 +47,11 @@ class CompressionBombError(DomainError):
     code = ErrorCode.COMPRESSION_BOMB.value
     http_status = 400
     title = "压缩异常"
+
+
+class DuplicateFileError(DomainError):
+    """同项目内已存在相同哈希的文件时抛出（不重复创建版本）。"""
+
+    code = ErrorCode.DUPLICATE_FILE.value
+    http_status = 409
+    title = "重复文件"
