@@ -15,13 +15,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from tender_insight.modules.project.domain.exceptions import InvalidProjectDataError
 from tender_insight.shared.business_time import BusinessInstant, Clock
 from tender_insight.shared.identifiers import Uuid
 from tender_insight.shared.state_transitions import validate_transition
 from tender_insight.shared.states import ProjectLifecycleStatus
+
+# 待删除保留期：30 天（SPEC.md 第 6.3 节）。到期后由清除用例处理（J-009）。
+PENDING_DELETION_RETENTION_DAYS = 30
+
+
+def pending_deletion_deadline(pending_deletion_at: datetime) -> datetime:
+    """计算待删除到期时间点 = 请求删除时间 + 保留期。"""
+    return pending_deletion_at + timedelta(days=PENDING_DELETION_RETENTION_DAYS)
 
 
 @dataclass

@@ -31,6 +31,7 @@ __all__ = [
     "DomainError",
     "NotFoundError",
     "ConflictError",
+    "PreconditionFailedError",
     "ProblemDetail",
     "problem_from_error",
     "add_problem_exception_handler",
@@ -47,6 +48,12 @@ class ConflictError(DomainError):
     code = ErrorCode.CONFLICT.value
     http_status = 409
     title = "资源冲突"
+
+
+class PreconditionFailedError(DomainError):
+    code = ErrorCode.PRECONDITION_FAILED.value
+    http_status = 412
+    title = "前置条件不满足"
 
 
 class ProblemDetail(BaseModel):

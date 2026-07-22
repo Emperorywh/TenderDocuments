@@ -8,12 +8,27 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from tender_insight.modules.project.domain.project import Project
 from tender_insight.modules.project.infrastructure.models import ProjectModel
 from tender_insight.shared.identifiers import Uuid
 from tender_insight.shared.states import ProjectLifecycleStatus
+
+
+def _ensure_aware(value: datetime | None) -> datetime | None:
+    """读取的时间戳若为 naive（SQLite 不保留时区），按 UTC 还原为 aware。
+
+    生产 PostgreSQL 的 timestamptz 本就是 aware，此处为兼容测试库的规整；
+    保证领域层始终拿到带时区时间（与 BusinessInstant 一致）。
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
 
 
 class SqlAlchemyProjectRepository:
@@ -80,7 +95,7 @@ def _to_domain(orm: ProjectModel) -> Project:
         project_type=orm.project_type,
         lifecycle_state=ProjectLifecycleStatus(orm.lifecycle_state),
         version=orm.version,
-        archived_at=orm.archived_at,
-        pending_deletion_at=orm.pending_deletion_at,
-        deleted_at=orm.deleted_at,
+        archived_at=_ensure_aware(orm.archived_at),
+        pending_deletion_at=_ensure_aware(orm.pending_deletion_at),
+        deleted_at=_ensure_aware(orm.deleted_at),
     )
