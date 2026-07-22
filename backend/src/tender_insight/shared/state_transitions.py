@@ -19,6 +19,7 @@ from tender_insight.shared.states import (
     AnalysisTaskStatus,
     DocumentVersionStatus,
     PageStatus,
+    ProjectLifecycleStatus,
     ReportSnapshotStatus,
     ReviewStatus,
 )
@@ -143,6 +144,18 @@ _TRANSITIONS: Mapping[type[StrEnum], Mapping[StrEnum, frozenset[StrEnum]]] = {
             {ReportSnapshotStatus.AVAILABLE, ReportSnapshotStatus.FAILED}
         ),
         ReportSnapshotStatus.AVAILABLE: frozenset({ReportSnapshotStatus.OUTDATED}),
+    },
+    # 项目生命周期：归档/恢复；删除进入待删除期并可恢复，到期清除（SPEC.md 第 6.3 节）。
+    ProjectLifecycleStatus: {
+        ProjectLifecycleStatus.ACTIVE: frozenset(
+            {ProjectLifecycleStatus.ARCHIVED, ProjectLifecycleStatus.PENDING_DELETION}
+        ),
+        ProjectLifecycleStatus.ARCHIVED: frozenset(
+            {ProjectLifecycleStatus.ACTIVE, ProjectLifecycleStatus.PENDING_DELETION}
+        ),
+        ProjectLifecycleStatus.PENDING_DELETION: frozenset(
+            {ProjectLifecycleStatus.ACTIVE, ProjectLifecycleStatus.DELETED}
+        ),
     },
 }
 

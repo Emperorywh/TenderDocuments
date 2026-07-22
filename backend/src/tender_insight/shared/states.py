@@ -98,6 +98,19 @@ class ReportSnapshotStatus(StrEnum):
     OUTDATED = "OUTDATED"
 
 
+class ProjectLifecycleStatus(StrEnum):
+    """项目生命周期状态（SPEC.md 第 6.3 节）。
+
+    项目可归档（可恢复）、删除进入 30 天待删除期（可恢复），到期后清除业务
+    数据并保留最小审计凭证。该状态机不与文件/分析状态混用（ADR-011）。
+    """
+
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
+    PENDING_DELETION = "PENDING_DELETION"
+    DELETED = "DELETED"
+
+
 # 状态机注册表：机名 -> 枚举类。集中暴露，便于校验“唯一名称、无重复定义”。
 STATE_MACHINES: dict[str, type[StrEnum]] = {
     "document_version": DocumentVersionStatus,
@@ -107,4 +120,5 @@ STATE_MACHINES: dict[str, type[StrEnum]] = {
     "analysis_task": AnalysisTaskStatus,
     "review": ReviewStatus,
     "report_snapshot": ReportSnapshotStatus,
+    "project_lifecycle": ProjectLifecycleStatus,
 }

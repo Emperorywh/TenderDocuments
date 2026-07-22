@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：**阶段 A（工程与架构基线）已完成**，共 24 项；正在进入阶段 B（项目生命周期与操作记录），下一任务 `B-001`。
-* 整体完成度：`24 / 326` 个原子开发任务完成（约 `7.4%`）。
-* 当前分支：`main`，HEAD 为 `e733f1a`（A-023 提交）。
+* 当前阶段：阶段 B（项目生命周期与操作记录）进行中；`B-001` 已完成，下一任务 `B-002`。
+* 整体完成度：`25 / 326` 个原子开发任务完成（约 `7.7%`）。
+* 当前分支：`main`，HEAD 为 `ff0ce13`（A-024 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,13 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`B-001`
-* Task 名称：建立 Project 数据迁移
+* Task 编号：`B-002`
+* Task 名称：建立 Project 领域实体
 * 当前状态：待开始。
-* 前置依赖：`A-007`、`A-008`、`A-016`（已完成）。
-* 当前目标：建立 Project 表与约束。
-* 阻塞风险：迁移生成与运行需 PostgreSQL（本机无 Docker）。将生成 Alembic 迁移脚本与 SQLAlchemy 模型，结构以测试验证；运行时迁移到真实库待 Docker 就绪。
-* 验收标准：空库迁移成功且无用户、组织或租户字段。
+* 前置依赖：`B-001`、`A-022`（已完成）。
+* 当前目标：建立 Project 聚合与生命周期不变量。
+* 验收标准：非法字段和非法状态转换被领域测试拒绝。
 
 需要持续遵守的约束：
 
@@ -32,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### B-001 建立 Project 数据迁移
+
+* 实现摘要：建立数据库层基础设施——`shared/orm.py`（DeclarativeBase + 命名约定 + TimestampMixin，可移植类型）、`bootstrap/db.py`（engine/session 工厂）、`modules/project/infrastructure/models.py`（ProjectModel：UUID 主键、name/region/industry/project_type、lifecycle_state、archived_at/pending_deletion_at/deleted_at、乐观 version，无身份字段）。建立 Alembic 脚手架（alembic.ini/ASCII、env.py 从 DATABASE_URL 读连接串并导入各模块 Model、script.py.mako）与首个迁移 0001_create_projects。在 states.py/state_transitions.py 补 ProjectLifecycleStatus 状态机与转换。将 A-024 身份字段扫描由正则改为 AST 标识符扫描，避免注释误判。
+* 验证结果（2026-07-23）：`uv run pytest tests/migrations` 4 项通过——空库迁移创建 projects 表、含核心列与 version、无身份字段、可回滚；全量 116 项通过；ruff、pyright 0 错误。
+* **运行时缺口（诚实记录）**：本机无 PostgreSQL/Docker，迁移以临时文件 SQLite 作“空库”运行验证（可移植类型保证 PG 兼容）；生产目标 PostgreSQL，真实 PG 迁移待 Docker 就绪补充。
 
 ### A-024 验证首版无身份模块（阶段 A 完成）
 
@@ -188,7 +193,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 24 个（`A-001`～`A-024`，阶段 A 全部完成），剩余 302 个。
+`TASKS.md` 共有 326 个原子任务，已完成 25 个（`A-001`～`A-024`、`B-001`），剩余 301 个。
 
 已完成的非开发里程碑：
 
