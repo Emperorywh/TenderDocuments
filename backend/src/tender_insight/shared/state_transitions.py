@@ -14,6 +14,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from enum import StrEnum
 
+from tender_insight.shared.domain_error import DomainError
+from tender_insight.shared.error_codes import ErrorCode
 from tender_insight.shared.states import (
     AnalysisRunStatus,
     AnalysisTaskStatus,
@@ -25,13 +27,16 @@ from tender_insight.shared.states import (
 )
 
 
-class InvalidTransitionError(ValueError):
+class InvalidTransitionError(DomainError):
     """状态转换非法时抛出的稳定错误。
 
-    纯异常（不依赖框架）；API 层据此映射为 INVALID_STATE_TRANSITION。
+    继承纯 DomainError，code=INVALID_STATE_TRANSITION，http_status=409；由 shared.errors
+    处理器统一映射为 Problem Details。
     """
 
-    code: str = "INVALID_STATE_TRANSITION"
+    code = ErrorCode.INVALID_STATE_TRANSITION.value
+    http_status = 409
+    title = "非法状态转换"
 
 
 # 各状态机的合法转换表：当前状态 -> 允许的目标状态集合。

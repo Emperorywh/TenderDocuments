@@ -1,13 +1,17 @@
 """project 领域异常（纯领域层）。
 
-领域异常不依赖框架；与 shared.state_transitions.InvalidTransitionError 一样，
-保持纯 ValueError 子类，由应用/API 层映射为 Problem Details。
+继承纯 DomainError，使 API 层可统一映射为 Problem Details，而领域层不依赖框架。
 """
 
 from __future__ import annotations
 
+from tender_insight.shared.domain_error import DomainError
+from tender_insight.shared.error_codes import ErrorCode
 
-class InvalidProjectDataError(ValueError):
+
+class InvalidProjectDataError(DomainError):
     """项目数据非法（空名称、缺失地区/行业/类型等）时抛出的稳定错误。"""
 
-    code: str = "INVALID_PROJECT_DATA"
+    code = ErrorCode.INVALID_PROJECT_DATA.value
+    http_status = 400
+    title = "项目数据非法"
