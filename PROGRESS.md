@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 B 进行中；`B-001`、`B-002` 已完成，下一任务 `B-003`。
-* 整体完成度：`26 / 326` 个原子开发任务完成（约 `8.0%`）。
-* 当前分支：`main`，HEAD 为 `6d254c5`（B-001 提交）。
+* 当前阶段：阶段 B 进行中；`B-001`～`B-003` 已完成，下一任务 `B-004`。
+* 整体完成度：`27 / 326` 个原子开发任务完成（约 `8.3%`）。
+* 当前分支：`main`，HEAD 为 `1194c48`（B-002 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`B-003`
-* Task 名称：实现 Project 仓储
+* Task 编号：`B-004`
+* Task 名称：实现项目创建用例
 * 当前状态：待开始。
-* 前置依赖：`B-002`（已完成）。
-* 当前目标：建立项目仓储端口与 SQLAlchemy 适配器。
-* 验收标准：创建后按 project_id 可回读且事务回滚不留数据。
+* 前置依赖：`B-003`、`A-012`（已完成）。
+* 当前目标：实现创建项目应用用例。
+* 验收标准：最小合法输入成功，缺少必填字段失败。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### B-003 实现 Project 仓储
+
+* 实现摘要：新增 application 端口 `ProjectRepository`（Protocol：add/get/save）与 infrastructure `SqlAlchemyProjectRepository`（领域 Project↔ProjectModel 映射、不持事务）。新增 `tests/conftest.py` 提供 SQLite+迁移 engine/session 夹具供后续 DB 测试复用。
+* 验证结果（2026-07-23）：`uv run pytest tests/modules/project/test_project_repository.py` 4 项通过——创建后按 id 回读字段一致、事务回滚不留数据（新会话亦查不到）、未知 id 返回 None、save 保存归档变更与 version；全量 130 项通过；ruff、pyright 0 错误。
 
 ### B-002 建立 Project 领域实体
 
@@ -198,7 +203,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 26 个（`A-001`～`A-024`、`B-001`、`B-002`），剩余 300 个。
+`TASKS.md` 共有 326 个原子任务，已完成 27 个（`A-001`～`A-024`、`B-001`～`B-003`），剩余 299 个。
 
 已完成的非开发里程碑：
 
