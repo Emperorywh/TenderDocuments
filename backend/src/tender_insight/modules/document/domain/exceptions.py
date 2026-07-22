@@ -23,3 +23,19 @@ class FileTypeMismatchError(DomainError):
     code = ErrorCode.FILE_TYPE_MISMATCH.value
     http_status = 400
     title = "文件类型不一致"
+
+
+class EmptyFileError(DomainError):
+    """空文件（0 字节）时抛出。"""
+
+    code = ErrorCode.EMPTY_FILE.value
+    http_status = 400
+    title = "空文件"
+
+
+class CorruptFileError(DomainError):
+    """损坏或不可读文件时抛出（结构校验失败）。"""
+
+    code = ErrorCode.CORRUPT_FILE.value
+    http_status = 400
+    title = "损坏文件"
