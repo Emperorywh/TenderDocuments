@@ -24,6 +24,7 @@ sys.path.insert(0, str(BACKEND_DIR / "src"))
 from tender_insight.shared.orm import Base  # noqa: E402
 
 # 显式导入各模块 ORM Model，使其注册到 metadata。新增模块时在此补充 import。
+from tender_insight.modules.document.infrastructure.models import UploadSessionModel  # noqa: E402,F401
 from tender_insight.modules.operation_log.infrastructure.models import OperationLogModel  # noqa: E402,F401
 from tender_insight.modules.project.infrastructure.models import ProjectModel  # noqa: E402,F401
 

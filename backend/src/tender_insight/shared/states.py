@@ -111,6 +111,19 @@ class ProjectLifecycleStatus(StrEnum):
     DELETED = "DELETED"
 
 
+class UploadSessionStatus(StrEnum):
+    """上传会话状态（SPEC.md 第 8.3 节）。
+
+    会话是“上传完成前”的暂态：创建→PENDING，完成校验→COMPLETED，过期→EXPIRED，
+    取消→CANCELLED。过期会话不能完成正式接入（成为 DocumentVersion）。
+    """
+
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
 # 状态机注册表：机名 -> 枚举类。集中暴露，便于校验“唯一名称、无重复定义”。
 STATE_MACHINES: dict[str, type[StrEnum]] = {
     "document_version": DocumentVersionStatus,
@@ -121,4 +134,5 @@ STATE_MACHINES: dict[str, type[StrEnum]] = {
     "review": ReviewStatus,
     "report_snapshot": ReportSnapshotStatus,
     "project_lifecycle": ProjectLifecycleStatus,
+    "upload_session": UploadSessionStatus,
 }

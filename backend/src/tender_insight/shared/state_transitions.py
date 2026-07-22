@@ -24,6 +24,7 @@ from tender_insight.shared.states import (
     ProjectLifecycleStatus,
     ReportSnapshotStatus,
     ReviewStatus,
+    UploadSessionStatus,
 )
 
 
@@ -161,6 +162,14 @@ _TRANSITIONS: Mapping[type[StrEnum], Mapping[StrEnum, frozenset[StrEnum]]] = {
         ProjectLifecycleStatus.PENDING_DELETION: frozenset(
             {ProjectLifecycleStatus.ACTIVE, ProjectLifecycleStatus.DELETED}
         ),
+    },
+    # 上传会话：PENDING 完成/过期/取消；终态不可再变（过期会话不能完成接入）。
+    UploadSessionStatus: {
+        UploadSessionStatus.PENDING: frozenset({
+            UploadSessionStatus.COMPLETED,
+            UploadSessionStatus.EXPIRED,
+            UploadSessionStatus.CANCELLED,
+        }),
     },
 }
 
