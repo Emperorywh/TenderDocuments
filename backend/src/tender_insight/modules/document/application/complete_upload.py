@@ -26,7 +26,6 @@ from tender_insight.modules.document.domain.compression import validate_compress
 from tender_insight.modules.document.domain.document import Document
 from tender_insight.modules.document.domain.document_types import DocumentBusinessType
 from tender_insight.modules.document.domain.document_version import DocumentVersion
-from tender_insight.modules.document.domain.exceptions import DuplicateFileError
 from tender_insight.modules.document.domain.file_integrity import validate_file_integrity
 from tender_insight.modules.document.domain.file_type import validate_file_type
 from tender_insight.modules.document.domain.hashing import iter_chunks, sha256_streaming
@@ -104,8 +103,14 @@ class CompleteUploadUseCase:
             max_ratio=self._max_ratio,
         )
         digest = sha256_streaming(iter_chunks(data))
-        if self._versions.exists_by_sha256_in_project(upload.project_id, digest):
-            raise DuplicateFileError("同项目内已存在相同哈希文件，不重复创建版本")
+        # 同项目哈希重复策略（C-018）。
+        from tender_insight.modules.document.domain.duplicate_policy import assert_not_duplicate
+
+        assert_not_duplicate(
+            upload.project_id,
+            digest,
+            self._versions.exists_by_sha256_in_project,
+        )
 
         # ---- 变更阶段：移动对象 → 创建 Document + Version → 标记会话完成 ----
         dest_key = ObjectKey(category=ObjectCategory.ORIGINAL, key=str(Uuid.new()))
