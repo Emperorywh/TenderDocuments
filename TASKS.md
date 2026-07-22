@@ -45,7 +45,7 @@
 | [x] A-012 | 定义统一错误契约 | A-005 | Problem Details 与稳定错误码目录 | 两个示例失败返回同一结构且无需匹配文案 |
 | [x] A-013 | 建立强类型配置 | A-002 | Pydantic Settings 与环境变量示例 | 缺少关键配置时进程明确失败退出 |
 | [x] A-014 | 建立后端质量检查配置 | A-002 | Ruff、Pyright、pytest 配置 | 三条检查命令可分别运行 |
-| [ ] A-015 | 建立前端质量检查配置 | A-004 | TypeScript、Vitest、Testing Library 配置 | 类型、构建、组件测试命令可分别运行 |
+| [x] A-015 | 建立前端质量检查配置 | A-004 | TypeScript、Vitest、Testing Library 配置 | 类型、构建、组件测试命令可分别运行 |
 | [ ] A-016 | 建立 PostgreSQL 开发服务 | A-001 | Compose 中的 PostgreSQL 与健康检查 | 重启后测试数据仍存在 |
 | [ ] A-017 | 建立 Redis 开发服务 | A-001 | Compose 中的 Redis 与健康检查 | 连接、写入、读取与重启行为符合配置 |
 | [ ] A-018 | 建立 MinIO 开发服务 | A-001 | Compose 中的 MinIO 与私有 Bucket | 未签名请求无法读取私有测试对象 |
