@@ -156,3 +156,23 @@ class DocumentVersionRepository(Protocol):
     def exists_by_sha256_in_project(self, project_id: Uuid, sha256: str) -> bool:
         """项目内是否已存在同哈希版本（重复检测，C-018）。"""
         ...
+
+
+class DocumentRelationRepository(Protocol):
+    """文件关系仓储端口。"""
+
+    def add(
+        self,
+        *,
+        project_id: Uuid,
+        source_document_id: Uuid,
+        target_document_id: Uuid,
+        relation_type: str,
+    ) -> None:
+        ...
+
+    def relations_in_project(
+        self, project_id: Uuid, *, relation_type: str
+    ) -> list[tuple[Uuid, Uuid]]:
+        """返回项目内指定类型的 (source, target) 关系列表。"""
+        ...
