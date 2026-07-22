@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 B（项目生命周期与操作记录）进行中；`B-001` 已完成，下一任务 `B-002`。
-* 整体完成度：`25 / 326` 个原子开发任务完成（约 `7.7%`）。
-* 当前分支：`main`，HEAD 为 `ff0ce13`（A-024 提交）。
+* 当前阶段：阶段 B 进行中；`B-001`、`B-002` 已完成，下一任务 `B-003`。
+* 整体完成度：`26 / 326` 个原子开发任务完成（约 `8.0%`）。
+* 当前分支：`main`，HEAD 为 `6d254c5`（B-001 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`B-002`
-* Task 名称：建立 Project 领域实体
+* Task 编号：`B-003`
+* Task 名称：实现 Project 仓储
 * 当前状态：待开始。
-* 前置依赖：`B-001`、`A-022`（已完成）。
-* 当前目标：建立 Project 聚合与生命周期不变量。
-* 验收标准：非法字段和非法状态转换被领域测试拒绝。
+* 前置依赖：`B-002`（已完成）。
+* 当前目标：建立项目仓储端口与 SQLAlchemy 适配器。
+* 验收标准：创建后按 project_id 可回读且事务回滚不留数据。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### B-002 建立 Project 领域实体
+
+* 实现摘要：新增 `modules/project/domain/project.py`（Project 聚合：create 工厂、字段非空不变量、archive/restore/request_deletion/recover/purge/update_details 命令，经 `validate_transition` 校验、version 自增、Clock 可注入）与 `domain/exceptions.py`（纯 `InvalidProjectDataError`）。纯领域层，不依赖框架。
+* 验证结果（2026-07-23）：`uv run pytest tests/modules/project` 10 项通过——空字段被拒（参数化 4 类）、归档/恢复/删除/恢复/清除流转正确、purge-from-active 与 archive-from-deleted 非法转换抛 InvalidTransitionError、update_details 校验+version 自增；全量 126 项通过；ruff、pyright 0 错误。
 
 ### B-001 建立 Project 数据迁移
 
@@ -193,7 +198,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 25 个（`A-001`～`A-024`、`B-001`），剩余 301 个。
+`TASKS.md` 共有 326 个原子任务，已完成 26 个（`A-001`～`A-024`、`B-001`、`B-002`），剩余 300 个。
 
 已完成的非开发里程碑：
 
