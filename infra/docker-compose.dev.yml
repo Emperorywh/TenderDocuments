@@ -34,5 +34,24 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  redis:
+    # Redis 7：Celery broker 与缓存，不承载权威业务状态（SPEC.md 第 2.4 节）。
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      # 仅本地回环绑定。
+      - "127.0.0.1:6379:6379"
+    volumes:
+      # 持久化 AOF，便于验证“重启后数据仍存在”的行为约定（A-017）。
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  redis_data:

@@ -49,3 +49,16 @@ def test_postgres_port_bound_to_loopback_only() -> None:
 def test_postgres_named_volume_declared() -> None:
     cfg = _load()
     assert "postgres_data" in cfg.get("volumes", {}), "未声明 postgres_data 命名卷"
+
+
+def test_redis_service_has_healthcheck_and_persistence() -> None:
+    """Redis 服务存在健康检查与持久化卷（A-017）。"""
+    cfg = _load()
+    redis = cfg["services"].get("redis")
+    assert redis is not None, "缺少 redis 服务"
+    healthcheck = redis.get("healthcheck")
+    assert healthcheck and healthcheck.get("test"), "redis 缺少健康检查"
+    volumes = redis.get("volumes", [])
+    assert any("/data" in v for v in volumes), "redis 未挂载持久化卷"
+    for binding in redis.get("ports", []):
+        assert str(binding).startswith("127.0.0.1:"), f"端口绑定非回环：{binding}"
