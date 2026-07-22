@@ -16,6 +16,8 @@ dist/
 
 # Node / 前端构建产物（随 A-004 补充前端忽略规则）
 node_modules/
+dist/
+*.tsbuildinfo
 
 # 操作系统与编辑器
 .DS_Store

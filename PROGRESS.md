@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 A——工程与架构基线；`A-001`、`A-002`、`A-003` 已完成，正在向 `A-004` 推进。
-* 整体完成度：`3 / 326` 个原子开发任务完成（约 `0.9%`）。
-* 当前分支：`main`，HEAD 为 `9537af4`（A-002 提交）。
+* 当前阶段：阶段 A——工程与架构基线；`A-001`～`A-004` 已完成，正在向 `A-005` 推进。
+* 整体完成度：`4 / 326` 个原子开发任务完成（约 `1.2%`）。
+* 当前分支：`main`，HEAD 为 `2714c4b`（A-003 提交）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`A-004`
-* Task 名称：初始化 React 工程
+* Task 编号：`A-005`
+* Task 名称：建立后端模块分层模板
 * 当前状态：待开始。
-* 前置依赖：`A-001`（已完成）。
-* 当前目标：建立 Vite、React、TypeScript 最小应用。
-* 验收标准：类型检查与生产构建分别成功。
+* 前置依赖：`A-002`（已完成）。
+* 当前目标：建立 domain、application、infrastructure、api 模块分层模板，示例 domain 不导入 Web、ORM、队列或供应商 SDK。
+* 验收标准：示例 domain 不导入 Web、ORM、队列或供应商 SDK。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,15 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### A-004 初始化 React 工程
+
+* 实现摘要：在 `frontend/` 下建立 Vite + React 19 + TypeScript 最小应用：`package.json`、`vite.config.ts`（含 `@`→src 别名与开发代理 `/api`、`/health` 到后端 8000）、`tsconfig`（project references，strict，`@/*` 路径别名）、`index.html`、`src/main.tsx`、`src/App.tsx`、`src/vite-env.d.ts`。根 `.gitignore` 补充 `dist/` 与 `*.tsbuildinfo`。首版无登录/会话 UI。
+* 主要新增文件：`frontend/package.json`、`frontend/package-lock.json`、`frontend/vite.config.ts`、`frontend/tsconfig.json`、`frontend/tsconfig.app.json`、`frontend/tsconfig.node.json`、`frontend/index.html`、`frontend/src/main.tsx`、`frontend/src/App.tsx`、`frontend/src/vite-env.d.ts`、`.gitignore`、`TASKS.md`（勾选 `A-004`）、`PROGRESS.md`。
+* 验证命令：`npm install`、`npm run typecheck`（`tsc -b --noEmit`）、`npm run build`（`tsc -b && vite build`）。
+* 验证结果（2026-07-22）：`npm install` 安装 69 包、0 漏洞；`npm run typecheck` 退出码 0；`npm run build` 退出码 0，产物 `dist/index.html` + `dist/assets/index-*.js`（28 模块，gzip 61KB）。类型检查与生产构建分别成功。验证通过。
+* Git commit：本次提交单独记录 `A-004` 交付物与进度更新。
+* 架构检查：未引入身份/鉴权 UI；未提前引入 TanStack Query、Ant Design 等阶段 I 依赖；严格模式 TypeScript，避免 any。
 
 ### A-003 建立后端最小启动入口
 
@@ -61,7 +70,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 3 个（`A-001`、`A-002`、`A-003`），剩余 323 个。
+`TASKS.md` 共有 326 个原子任务，已完成 4 个（`A-001`～`A-004`），剩余 322 个。
 
 已完成的非开发里程碑：
 
