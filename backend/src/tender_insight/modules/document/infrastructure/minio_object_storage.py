@@ -12,6 +12,7 @@ from datetime import timedelta
 from io import BytesIO
 
 from minio import Minio
+from minio.commonconfig import CopySource
 from minio.error import S3Error
 
 from tender_insight.modules.document.application import ObjectKey
@@ -92,3 +93,16 @@ class MinioObjectStorage:
             key.as_path(),
             expires=timedelta(seconds=expires_in_seconds),
         )
+
+    def move(self, source: ObjectKey, destination: ObjectKey) -> None:
+        """移动对象：复制到目标键后删除源键，使源键失效。"""
+        self._client.copy_object(
+            self._bucket,
+            destination.as_path(),
+            CopySource(self._bucket, source.as_path()),
+        )
+        self._client.remove_object(self._bucket, source.as_path())
+
+    def delete(self, key: ObjectKey) -> None:
+        """删除对象（幂等）；MinIO remove_object 对不存在的键不报错。"""
+        self._client.remove_object(self._bucket, key.as_path())

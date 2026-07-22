@@ -123,3 +123,35 @@ def test_presigned_get_url_passes_expiry() -> None:
     assert args[0] == "tender"
     assert args[1] == "original/k"
     assert kwargs["expires"] == timedelta(seconds=90)
+
+
+def test_move_copies_then_removes_source() -> None:
+    """移动：复制到目标键后删除源键，源键失效。"""
+    from minio.commonconfig import CopySource
+
+    client = MagicMock()
+    storage = _storage(client)
+
+    source = ObjectKey(category=ObjectCategory.QUARANTINE, key="q1")
+    destination = ObjectKey(category=ObjectCategory.ORIGINAL, key="o1")
+    storage.move(source, destination)
+
+    client.copy_object.assert_called_once()
+    c_args, _ = client.copy_object.call_args
+    assert c_args[0] == "tender"
+    assert c_args[1] == "original/o1"
+    assert isinstance(c_args[2], CopySource)
+    client.remove_object.assert_called_once_with("tender", "quarantine/q1")
+
+
+def test_delete_is_idempotent() -> None:
+    """删除幂等：多次调用均仅触发 remove_object，不报错。"""
+    client = MagicMock()
+    storage = _storage(client)
+    key = ObjectKey(category=ObjectCategory.ARTIFACTS, key="a1")
+
+    storage.delete(key)
+    storage.delete(key)  # 再次删除不报错
+
+    assert client.remove_object.call_count == 2
+    client.remove_object.assert_called_with("tender", "artifacts/a1")
