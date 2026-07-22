@@ -79,6 +79,21 @@ class SqlAlchemyDocumentVersionRepository:
             )
         )
 
+    def get(self, version_id: Uuid) -> DocumentVersion | None:
+        orm = self._session.get(DocumentVersionModel, version_id.value)
+        return version_from_orm(orm) if orm is not None else None
+
+    def save(self, version: DocumentVersion) -> None:
+        orm = self._session.get(DocumentVersionModel, version.id.value)
+        if orm is None:
+            self.add(version)
+            return
+        orm.status = version.status.value
+        orm.canonical_object_key = version.canonical_object_key
+        orm.page_count = version.page_count
+        orm.published_date = version.published_date
+        orm.effect_order = version.effect_order
+
     def next_version_number(self, document_id: Uuid) -> int:
         current = self._session.scalar(
             select(func.max(DocumentVersionModel.version_number)).where(

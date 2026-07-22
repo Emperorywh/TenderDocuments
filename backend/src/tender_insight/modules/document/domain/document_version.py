@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from tender_insight.shared.business_time import NaiveBusinessTimeError
 from tender_insight.shared.identifiers import Uuid
 from tender_insight.shared.state_transitions import validate_transition
 from tender_insight.shared.states import DocumentVersionStatus
@@ -133,3 +134,10 @@ class DocumentVersion:
 
     def reject(self) -> None:
         self._transition(DocumentVersionStatus.REJECTED)
+
+    def set_published_date(self, published_at: datetime) -> None:
+        """设置发布日期；必须带时区（SPEC.md 第 6.4 节，A-008）。"""
+        # 强制带时区：naive datetime 直接拒绝（不在领域引入隐式时区假设）。
+        if published_at.tzinfo is None:
+            raise NaiveBusinessTimeError("发布日期必须带时区")
+        self.published_date = published_at
