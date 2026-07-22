@@ -52,6 +52,48 @@ services:
       start_period: 3s
     restart: unless-stopped
 
+  minio:
+    # MinIO：S3 兼容对象存储；对象默认私有，仅通过短期授权地址访问
+    # （SPEC.md 第 4.2、12.3 节）。开发镜像用 latest，生产在阶段 K 锁定版本。
+    image: quay.io/minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_dev_password}
+    ports:
+      # S3 API 与控制台均仅回环绑定。
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  minio_init:
+    # 一次性初始化容器：创建私有 bucket。MinIO 新建 bucket 默认 private，
+    # 不设置任何 public 读策略，满足“未签名请求无法读取私有对象”（A-018）。
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_dev_password}
+      MINIO_BUCKET: ${MINIO_BUCKET:-tender}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" &&
+        mc mb -p "local/$${MINIO_BUCKET}" || true &&
+        mc anonymous set none "local/$${MINIO_BUCKET}" || true
+
 volumes:
   postgres_data:
   redis_data:
+  minio_data:

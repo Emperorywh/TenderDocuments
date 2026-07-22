@@ -48,7 +48,7 @@
 | [x] A-015 | 建立前端质量检查配置 | A-004 | TypeScript、Vitest、Testing Library 配置 | 类型、构建、组件测试命令可分别运行 |
 | [x] A-016 | 建立 PostgreSQL 开发服务 | A-001 | Compose 中的 PostgreSQL 与健康检查 | 重启后测试数据仍存在 |
 | [x] A-017 | 建立 Redis 开发服务 | A-001 | Compose 中的 Redis 与健康检查 | 连接、写入、读取与重启行为符合配置 |
-| [ ] A-018 | 建立 MinIO 开发服务 | A-001 | Compose 中的 MinIO 与私有 Bucket | 未签名请求无法读取私有测试对象 |
+| [x] A-018 | 建立 MinIO 开发服务 | A-001 | Compose 中的 MinIO 与私有 Bucket | 未签名请求无法读取私有测试对象 |
 | [ ] A-019 | 建立 OpenTelemetry 开发服务 | A-001 | Collector 开发配置 | 一条测试 Trace 能被 Collector 接收 |
 | [ ] A-020 | 建立 ADR 记录集 | A-001 | PLAN.md ADR-001 至 ADR-014 | 每份记录包含背景、决策、后果和重评条件 |
 | [ ] A-021 | 定义集中状态机目录 | A-005 | 文件、页面、分析、任务、复核、报告状态定义 | 所有状态具有唯一名称且无重复定义 |

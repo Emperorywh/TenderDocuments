@@ -62,3 +62,23 @@ def test_redis_service_has_healthcheck_and_persistence() -> None:
     assert any("/data" in v for v in volumes), "redis 未挂载持久化卷"
     for binding in redis.get("ports", []):
         assert str(binding).startswith("127.0.0.1:"), f"端口绑定非回环：{binding}"
+
+
+def test_minio_service_and_private_bucket_init() -> None:
+    """MinIO 服务存在健康检查，并由初始化容器创建私有 bucket（A-018）。"""
+    cfg = _load()
+    services = cfg["services"]
+    minio = services.get("minio")
+    assert minio is not None, "缺少 minio 服务"
+    assert minio.get("healthcheck", {}).get("test"), "minio 缺少健康检查"
+    for binding in minio.get("ports", []):
+        assert str(binding).startswith("127.0.0.1:"), f"端口绑定非回环：{binding}"
+
+    init = services.get("minio_init")
+    assert init is not None, "缺少 minio_init 初始化容器"
+    # 初始化容器等待 minio 健康。
+    assert init.get("depends_on", {}).get("minio", {}).get("condition") == "service_healthy"
+    # 入口脚本创建 bucket 并显式设为 none（私有，无匿名访问）。
+    entry = str(init.get("entrypoint"))
+    assert "mc mb" in entry, "初始化容器未创建 bucket"
+    assert "anonymous set none" in entry, "未显式将 bucket 设为私有"
