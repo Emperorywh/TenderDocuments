@@ -18,3 +18,11 @@ class DocumentBusinessType(StrEnum):
     EXTENSION_NOTICE = "EXTENSION_NOTICE"
     ATTACHMENT = "ATTACHMENT"
     OTHER = "OTHER"
+
+
+class DocumentRelationType(StrEnum):
+    """文件间关系类型（SPEC.md 第 6.4 节：替代、补充、引用）。"""
+
+    REPLACES = "REPLACES"
+    SUPPLEMENTS = "SUPPLEMENTS"
+    REFERENCES = "REFERENCES"

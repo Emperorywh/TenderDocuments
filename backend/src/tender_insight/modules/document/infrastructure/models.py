@@ -9,7 +9,15 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tender_insight.shared.orm import Base, TimestampMixin
@@ -91,4 +99,39 @@ class DocumentVersionModel(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
     effect_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class DocumentRelationModel(Base, TimestampMixin):
+    """document_relations 表：文件间替代/补充/引用关系（C-016）。
+
+    关系归属一个 project_id（确保同项目）；禁止自引用（source != target）由
+    CHECK 约束保证；跨项目非法关系由应用用例（C-024）按 project_id 校验拒绝。
+    """
+
+    __tablename__ = "document_relations"
+    __table_args__ = (
+        # 禁止自引用关系。
+        CheckConstraint(
+            "source_document_id <> target_document_id",
+            name="ck_document_relations_no_self_reference",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    project_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("projects.id"),
+        nullable=False,
+    )
+    source_document_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("documents.id"),
+        nullable=False,
+    )
+    target_document_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("documents.id"),
+        nullable=False,
+    )
+    relation_type: Mapped[str] = mapped_column(String(16), nullable=False)
 
