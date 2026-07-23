@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001` 已完成，下一任务 `D-002`。
-* 整体完成度：`77 / 326` 个原子开发任务完成（约 `23.6%`）。
-* 当前分支：`main`，HEAD 为 `D-001` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-002` 已完成，下一任务 `D-003`。
+* 整体完成度：`78 / 326` 个原子开发任务完成（约 `23.9%`）。
+* 当前分支：`main`，HEAD 为 `D-002` 提交（待创建）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-002 实现 AnalysisRun 状态机
+
+* 实现摘要：新增 analysis domain `analysis_run.py`（AnalysisRun 聚合：create 工厂构造 DRAFT、input_fingerprint/input_version_ids 创建后不可变、状态转换方法 queue/start_parsing/start_extracting/start_analyzing/start_verifying/require_review/mark_ready/publish/request_cancel/confirm_cancelled/mark_failed/mark_outdated 经 validate_transition 集中校验、completeness 独立字段 set_completeness 不耦合状态）。
+* 验证结果（2026-07-23）：15 项领域测试通过——create 为 DRAFT、主路径至 PUBLISHED→OUTDATED、VERIFYING→REVIEW_REQUIRED→READY、DRAFT 不可跳 PARSING、DRAFT 不可跳 READY、PUBLISHED 只能从 READY、活动状态均可取消/失败、CANCEL_REQUESTED 只能到 CANCELLED、终态不可流转、PUBLISHED 只能到 OUTDATED、完整性独立于状态、空指纹/空输入集合被拒、输入版本元组不可变；全量 343 项通过；ruff、pyright 0 错误。
 
 ### D-001 建立 AnalysisRun 迁移
 
