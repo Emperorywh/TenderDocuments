@@ -27,6 +27,7 @@ from tender_insight.shared.orm import Base  # noqa: E402
 from tender_insight.modules.analysis.infrastructure.models import (  # noqa: E402,F401
     AnalysisRunInputModel,
     AnalysisRunModel,
+    AnalysisTaskModel,
 )
 from tender_insight.modules.document.infrastructure.models import (  # noqa: E402,F401
     DocumentModel,

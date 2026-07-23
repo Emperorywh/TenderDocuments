@@ -92,3 +92,40 @@ class AnalysisRunInputModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class AnalysisTaskModel(Base, TimestampMixin):
+    """analysis_tasks 表：原子分析任务（D-004）。
+
+    每个任务必须显式关联运行（analysis_run_id）与项目（project_id），使 Worker
+    能校验任务、运行与项目的一致归属，不信任消息中的孤立 ID（SPEC.md 第 4.3 节）。
+    task_type 决定队列路由（D-012）；status 为 AnalysisTaskStatus（SPEC.md 第 5.4 节）。
+    idempotency_key 在运行内唯一，保证相同任务不产生重复正式结果（SPEC.md 第 11.3 节）。
+    """
+
+    __tablename__ = "analysis_tasks"
+    __table_args__ = (
+        UniqueConstraint(
+            "analysis_run_id",
+            "idempotency_key",
+            name="uq_analysis_tasks_run_idempotency",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    # 任务必须关联运行与项目；Worker 据此校验归属一致性。
+    analysis_run_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("analysis_runs.id"),
+        nullable=False,
+    )
+    project_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("projects.id"),
+        nullable=False,
+    )
+    # 任务类型（convert/parse/ocr/extract/risk/report，D-012 据此路由队列）。
+    task_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    # 任务幂等键：运行内唯一，防重复结果（SPEC.md 第 11.3 节）。
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
