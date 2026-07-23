@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 C 全部完成；`C-001`～`C-034` 已完成，下一任务 `D-001`（阶段 D 起步）。
-* 整体完成度：`76 / 326` 个原子开发任务完成（约 `23.3%`）。
-* 当前分支：`main`，HEAD 为 `C-030` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001` 已完成，下一任务 `D-002`。
+* 整体完成度：`77 / 326` 个原子开发任务完成（约 `23.6%`）。
+* 当前分支：`main`，HEAD 为 `D-001` 提交（待创建）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-001 建立 AnalysisRun 迁移
+
+* 实现摘要：新增 analysis 模块骨架（domain/application/infrastructure/api 四层 + README）；infrastructure `models.py` 定义 AnalysisRunModel（id/project_id/status/completeness 独立于 status/input_fingerprint/started_at，无身份字段）与 AnalysisRunInputModel（运行↔DocumentVersion 输入集合关系，position 保留生效顺序，唯一约束防重复计入）；迁移 0007 建两表与索引并注册到 env.py。
+* 验证结果（2026-07-23）：6 项迁移测试通过——analysis_runs 表结构且无身份字段、status 与 completeness 为两个独立列(completeness 可空)、analysis_run_inputs 表结构、project_id 外键引用 projects、运行保存不可变输入指纹(C-026 真实指纹)与有序输入集合、唯一约束拒绝同版本重复计入；全量 328 项通过；ruff、pyright 0 错误。
 
 ### C-030 接入文件关键操作记录
 
