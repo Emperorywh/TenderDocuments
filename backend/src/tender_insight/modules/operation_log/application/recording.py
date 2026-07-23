@@ -46,27 +46,27 @@ def record_command_outcome(
     except DomainError as exc:
         session.rollback()
         if open_recorder is not None and session_factory is not None:
-            _persist_failure(
-                session_factory,
-                open_recorder,
-                action,
-                resource_type,
-                resource_id,
-                exc.code,
-                request_id,
+            persist_operation_failure(
+                session_factory=session_factory,
+                open_recorder=open_recorder,
+                action=action,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                error_code=exc.code,
+                request_id=request_id,
             )
         raise
     except Exception:
         session.rollback()
         if open_recorder is not None and session_factory is not None:
-            _persist_failure(
-                session_factory,
-                open_recorder,
-                action,
-                resource_type,
-                resource_id,
-                "INTERNAL_ERROR",
-                request_id,
+            persist_operation_failure(
+                session_factory=session_factory,
+                open_recorder=open_recorder,
+                action=action,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                error_code="INTERNAL_ERROR",
+                request_id=request_id,
             )
         raise
 
@@ -85,7 +85,8 @@ def record_command_outcome(
     return result
 
 
-def _persist_failure(
+def persist_operation_failure(
+    *,
     session_factory: Callable[[], Session],
     open_recorder: Callable[[Session], OperationRecorder],
     action: str,
@@ -94,7 +95,11 @@ def _persist_failure(
     error_code: str,
     request_id: str | None,
 ) -> None:
-    """在独立会话中持久化失败记录，确保不受业务事务回滚影响。"""
+    """在独立会话中持久化失败记录，确保不受业务事务回滚影响。
+
+    供 record_command_outcome 与需要自定义事务边界（如对象存储副作用回滚）的
+    用例复用，使“失败记录独立持久化”只有这一处权威实现（SPEC.md 第 6.2 节）。
+    """
     fresh = session_factory()
     try:
         open_recorder(fresh).record(

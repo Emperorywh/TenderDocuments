@@ -1,18 +1,22 @@
-"""文件发布日期确认用例（C-022）。
+"""文件发布日期确认用例（C-022，C-030 接入操作记录）。
 
 操作人员设置文件版本的发布日期；必须带时区（SPEC.md 第 6.4 节，A-008），
-无时区或非法日期在领域层被拒绝。
+无时区或非法日期在领域层被拒绝。每个命令恰好产生一条操作记录。
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 
 from pydantic import BaseModel
 
 from tender_insight.modules.document.application import DocumentVersionRepository
+from tender_insight.modules.operation_log.application import OperationRecorder
+from tender_insight.modules.operation_log.application.recording import record_command_outcome
 from tender_insight.shared.errors import NotFoundError
 from tender_insight.shared.identifiers import Uuid
+from tender_insight.shared.request_context import current_request_context
 
 
 class ConfirmPublishedDateCommand(BaseModel):
@@ -26,20 +30,42 @@ class ConfirmPublishedDateResult(BaseModel):
 
 
 class ConfirmPublishedDateUseCase:
-    def __init__(self, *, repository: DocumentVersionRepository, session) -> None:
+    def __init__(
+        self,
+        *,
+        repository: DocumentVersionRepository,
+        session,
+        session_factory: Callable[[], object] | None = None,
+        open_recorder: Callable[[object], OperationRecorder] | None = None,
+    ) -> None:
         self._repository = repository
         self._session = session
+        self._session_factory = session_factory
+        self._open_recorder = open_recorder
 
     def execute(self, command: ConfirmPublishedDateCommand) -> ConfirmPublishedDateResult:
         version_id = Uuid.from_str(command.version_id)
-        version = self._repository.get(version_id)
-        if version is None:
-            raise NotFoundError(f"文件版本不存在：{command.version_id}")
-        # 领域层强制带时区：naive 抛 NaiveBusinessTimeError（稳定错误码）。
-        version.set_published_date(command.published_at)
-        self._repository.save(version)
-        self._session.commit()
-        return ConfirmPublishedDateResult(
-            version_id=str(version.id),
-            published_at=version.published_date,  # type: ignore[arg-type]
+        ctx = current_request_context()
+
+        def perform() -> ConfirmPublishedDateResult:
+            version = self._repository.get(version_id)
+            if version is None:
+                raise NotFoundError(f"文件版本不存在：{command.version_id}")
+            # 领域层强制带时区：naive 抛 NaiveBusinessTimeError（稳定错误码）。
+            version.set_published_date(command.published_at)
+            self._repository.save(version)
+            return ConfirmPublishedDateResult(
+                version_id=str(version.id),
+                published_at=version.published_date,  # type: ignore[arg-type]
+            )
+
+        return record_command_outcome(
+            session=self._session,
+            session_factory=self._session_factory,  # type: ignore[arg-type]
+            open_recorder=self._open_recorder,  # type: ignore[arg-type]
+            action="document.confirm_published_date",
+            resource_type="document_version",
+            resource_id=str(version_id),
+            request_id=ctx.request_id if ctx is not None else None,
+            perform=perform,
         )

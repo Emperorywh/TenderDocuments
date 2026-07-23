@@ -42,7 +42,7 @@ from tender_insight.modules.document.application.create_upload_session import (
 )
 from tender_insight.modules.document.application.list_documents import (
     DocumentListItem,
-    list_documents,
+    ListDocumentsUseCase,
 )
 from tender_insight.modules.document.infrastructure.document_relation_repository import (
     SqlAlchemyDocumentRelationRepository,
@@ -154,11 +154,11 @@ def create_router() -> APIRouter:
         session: Session = Depends(get_session),
     ) -> Page[DocumentListItem]:
         """分页查询项目下的逻辑文件（含版本数与确认状态）。"""
-        return list_documents(
-            session,
-            Uuid.from_str(project_id),
-            PageRequest(page=page, page_size=page_size),
-        )
+        return ListDocumentsUseCase(
+            session=session,
+            project_id=Uuid.from_str(project_id),
+            page_request=PageRequest(page=page, page_size=page_size),
+        ).execute()
 
     @router.patch(
         "/documents/{document_id}/type",

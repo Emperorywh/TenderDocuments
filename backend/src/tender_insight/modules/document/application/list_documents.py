@@ -1,10 +1,12 @@
-"""文件只读列表投影（C-029）。
+"""文件只读列表投影（C-029，C-030 接入查看操作记录）。
 
-分页查询项目下的逻辑文件（含版本数与确认状态），只读，不写领域表。
+分页查询项目下的逻辑文件（含版本数与确认状态），只读，不写领域表。查看属关键操作
+（SPEC.md 第 6.2 节），经 ListDocumentsUseCase 包装时恰好产生一条操作记录。
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -15,8 +17,11 @@ from tender_insight.modules.document.infrastructure.models import (
     DocumentModel,
     DocumentVersionModel,
 )
+from tender_insight.modules.operation_log.application import OperationRecorder
+from tender_insight.modules.operation_log.application.recording import record_command_outcome
 from tender_insight.shared.identifiers import Uuid
 from tender_insight.shared.pagination import Page, PageRequest
+from tender_insight.shared.request_context import current_request_context
 
 
 class DocumentListItem(BaseModel):
@@ -34,7 +39,7 @@ class DocumentListItem(BaseModel):
 def list_documents(
     session: Session, project_id: Uuid, page_request: PageRequest
 ) -> Page[DocumentListItem]:
-    """分页查询项目下的逻辑文件。"""
+    """分页查询项目下的逻辑文件（纯只读查询，不记录、不写表）。"""
     base_filter = DocumentModel.project_id == project_id.value
 
     total = session.scalar(
@@ -72,3 +77,41 @@ def list_documents(
             )
         )
     return Page(items=items, total=total, page=page_request.page, page_size=page_request.page_size)
+
+
+class ListDocumentsUseCase:
+    """查看文件列表用例（C-030）。
+
+    包装只读查询，注入录制器时为每次查看产生一条操作记录；未注入时等价于直接查询。
+    """
+
+    def __init__(
+        self,
+        *,
+        session: Session,
+        project_id: Uuid,
+        page_request: PageRequest,
+        session_factory: Callable[[], object] | None = None,
+        open_recorder: Callable[[object], OperationRecorder] | None = None,
+    ) -> None:
+        self._session = session
+        self._project_id = project_id
+        self._page_request = page_request
+        self._session_factory = session_factory
+        self._open_recorder = open_recorder
+
+    def execute(self) -> Page[DocumentListItem]:
+        ctx = current_request_context()
+        return record_command_outcome(
+            session=self._session,
+            session_factory=self._session_factory,  # type: ignore[arg-type]
+            open_recorder=self._open_recorder,  # type: ignore[arg-type]
+            action="document.view",
+            resource_type="project",
+            resource_id=str(self._project_id),
+            request_id=ctx.request_id if ctx is not None else None,
+            perform=lambda: list_documents(
+                self._session, self._project_id, self._page_request
+            ),
+        )
+
