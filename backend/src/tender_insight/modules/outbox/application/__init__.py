@@ -45,3 +45,19 @@ class OutboxWriter(Protocol):
     def write(self, event: OutboxEvent) -> None:
         """在当前事务内写入一条事件（不提交）。"""
         ...
+
+
+@dataclass(frozen=True)
+class OutboxEventClaim:
+    """已领取事件的消息信封（D-009）。
+
+    Scheduler 带行锁领取 PENDING 事件后，仅向投递通道暴露稳定 ID 与消息信封，
+    不承载正式领域模型整体（SPEC.md 第 7.2 节）。event_id 为业务事件唯一键，
+    供下游 Worker 幂等消费。
+    """
+
+    event_id: str
+    event_type: str
+    aggregate_type: str
+    aggregate_id: str
+    payload: dict

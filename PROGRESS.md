@@ -2,10 +2,10 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-008` 已完成，下一任务 `D-009`。
-* 整体完成度：`84 / 326` 个原子开发任务完成（约 `25.8%`）。
-* 当前分支：`main`，HEAD 为 `D-008` 提交（待创建）。
-* 最后更新时间：2026-07-22（Asia/Shanghai）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-009` 已完成，下一任务 `D-010`。
+* 整体完成度：`85 / 326` 个原子开发任务完成（约 `26.1%`）。
+* 当前分支：`main`，HEAD 为 `D-009` 提交（待创建）。
+* 最后更新时间：2026-07-23（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
 已确认的仓库状态：
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`C-033`、`C-034`、`C-030`
-* Task 名称：原始文件访问 API、上传完成 API、文件操作记录接入
-* 当前状态：待开始。
-* 前置依赖：`C-032` 及各前置（已完成）。
-* 当前目标：原始文件短期下载地址、上传完成确认端点、文件操作记录接入。
-* 阻塞风险：C-033/C-034 依赖对象存储适配器；C-030 复用 B-017 记录模式。
+* Task 编号：`D-010`
+* Task 名称：实现 Broker 投递与确认
+* 当前状态：待开始（`D-009` 已完成）。
+* 前置依赖：`D-009`（已完成）、`A-017`（Redis 开发服务，结构就绪，运行时待 Docker）。
+* 当前目标：Celery 投递适配器；领取事件投递到 Celery/Redis，投递成功后数据库记录确认状态（DELIVERED）。
+* 阻塞风险：真实 Celery/Redis 运行时验证待 Docker；可先用 Celery 内存 eager/模拟适配器验证投递与确认逻辑。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-009 实现 Scheduler 事件领取
+
+* 实现摘要：新增 outbox application `OutboxEventClaim`（不可变消息信封值对象，仅暴露稳定 event_id 与 payload，不承载领域模型整体）与 infrastructure `claim_events.py`（`claim_pending_events(session, *, limit=10)`：以 `SELECT ... FOR UPDATE SKIP LOCKED` 领取 PENDING 事件，按 created_at 升序、limit 受控、行锁持有至事务结束；非破坏性领取，确认 DELIVERED 属 D-010 职责）。
+* 验证结果（2026-07-23）：8 项测试通过——按 created_at 升序返回 PENDING（乱序插入验证）、limit 受控、排除 DELIVERED/FAILED、无 PENDING 返回空、payload 完整回读、领取不修改事件状态、**并发排他性结构性证明（编译到 PostgreSQL 方言的 SQL 含 `FOR UPDATE` 与 `SKIP LOCKED`）**、OutboxEventClaim 不可变；全量 393 项通过；ruff、pyright 0 错误。
+* **运行时缺口（诚实记录）**：本机无 PostgreSQL/Docker，`FOR UPDATE SKIP LOCKED` 的真实并发排他在 SQLite 方言下被省略（SQLite 仅作领取逻辑验证）；并发排他性以 PostgreSQL 方言编译的结构性证明为保证，真实并发领取验证待 Docker 就绪补充（与 B-001/C-002 等既有 SQLite↔PG 记录一致）。
 
 ### D-008 实现事务 Outbox 写入
 
@@ -496,7 +502,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 74 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-032`），剩余 252 个。
+`TASKS.md` 共有 326 个原子任务，已完成 85 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-009`），剩余 241 个。
 
 已完成的非开发里程碑：
 
