@@ -39,6 +39,8 @@ class ErrorCode(StrEnum):
 
     # 异步投递（outbox）。
     OUTBOX_DELIVERY_FAILED = "OUTBOX_DELIVERY_FAILED"
+    # Worker 归属校验（任务/运行/项目关联不一致，SPEC.md 第 4.3 节）。
+    TASK_OWNERSHIP_MISMATCH = "TASK_OWNERSHIP_MISMATCH"
 
     # 未分类内部错误。
     INTERNAL_ERROR = "INTERNAL_ERROR"

@@ -24,3 +24,16 @@ class ClaimedExecution:
     project_id: UUID
     task_type: str
     attempt_number: int
+
+
+@dataclass(frozen=True)
+class TaskOwnership:
+    """经 DB 校验的任务归属（D-014）。
+
+    字段均来自数据库权威（非消息声称），Worker 据此执行，确保不信任消息中的孤立 ID
+    （SPEC.md 第 4.3 节）。
+    """
+
+    task_id: UUID
+    analysis_run_id: UUID
+    project_id: UUID

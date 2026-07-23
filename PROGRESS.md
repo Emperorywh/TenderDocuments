@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-013` 已完成，下一任务 `D-014`。
-* 整体完成度：`89 / 326` 个原子开发任务完成（约 `27.3%`）。
-* 当前分支：`main`，HEAD 为 `D-013` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-014` 已完成，下一任务 `D-015`。
+* 整体完成度：`90 / 326` 个原子开发任务完成（约 `27.6%`）。
+* 当前分支：`main`，HEAD 为 `D-014` 提交（待创建）。
 * 最后更新时间：2026-07-23（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`D-014`
-* Task 名称：实现 Worker 项目归属校验
-* 当前状态：待开始（`D-013` 已完成）。
+* Task 编号：`D-015`
+* Task 名称：实现任务幂等结果提交
+* 当前状态：待开始（`D-014` 已完成）。
 * 前置依赖：`D-013`（已完成）。
-* 当前目标：项目、运行、任务关联校验；伪造不匹配 ID 的消息被拒绝且不执行。
-* 阻塞风险：归属校验为纯数据库一致性检查，可在当前 SQLite 环境完整验证。
+* 当前目标：原子结果提交用例；重复消息不产生重复正式结果。
+* 阻塞风险：幂等提交依赖任务状态机与 attempt 唯一约束，可在当前 SQLite 环境完整验证。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-014 实现 Worker 项目归属校验
+
+* 实现摘要：新增 analysis application `TaskOwnership`（经 DB 确认的归属值对象，字段来自数据库非消息）、domain `exceptions.py`（TaskOwnershipError，code TASK_OWNERSHIP_MISMATCH，422）与 infrastructure `task_ownership.py`（`validate_task_ownership`：以消息声称的 task/run/project 与 DB 权威交叉校验——任务存在（缺失 NotFoundError）、task.analysis_run_id==声称 run、task.project_id==声称 project、运行存在且 run.project_id==声称 project，任一不一致抛 TaskOwnershipError 拒绝执行；返回 DB 确认的 TaskOwnership）。
+* 验证结果（2026-07-23）：6 项测试通过——一致消息返回 DB 归属、**伪造 run_id 拒绝**、**伪造 project_id 拒绝**、运行-项目不一致拒绝、未知任务 NotFoundError、稳定错误码；全量 437 项通过；ruff、pyright 0 错误。
+* 说明：SPEC.md 第 4.3 节“Worker 不信任消息中的孤立 ID”；归属以 PostgreSQL 权威为准（ADR-004）。run 存在性由 FK 保证，防御性 run-None 检查保留（FK 下不可达，保护数据异常）。
 
 ### D-013 实现 Worker 任务领取
 
@@ -526,7 +532,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 89 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-013`），剩余 237 个。
+`TASKS.md` 共有 326 个原子任务，已完成 90 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-014`），剩余 236 个。
 
 已完成的非开发里程碑：
 
