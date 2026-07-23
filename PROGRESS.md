@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-012` 已完成，下一任务 `D-013`。
-* 整体完成度：`88 / 326` 个原子开发任务完成（约 `27.0%`）。
-* 当前分支：`main`，HEAD 为 `D-012` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-013` 已完成，下一任务 `D-014`。
+* 整体完成度：`89 / 326` 个原子开发任务完成（约 `27.3%`）。
+* 当前分支：`main`，HEAD 为 `D-013` 提交（待创建）。
 * 最后更新时间：2026-07-23（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`D-013`
-* Task 名称：实现 Worker 任务领取
-* 当前状态：待开始（`D-012` 已完成）。
-* 前置依赖：`D-004`（已完成）、`D-012`（已完成）。
-* 当前目标：数据库原子领取用例；同一消息并发消费只获得一个执行权。
-* 阻塞风险：原子领取用 `SELECT ... FOR UPDATE SKIP LOCKED`（与 D-009 一致），可在 SQLite 验证领取逻辑 + PostgreSQL 方言编译证明并发排他；真实并发验证待 Docker。
+* Task 编号：`D-014`
+* Task 名称：实现 Worker 项目归属校验
+* 当前状态：待开始（`D-013` 已完成）。
+* 前置依赖：`D-013`（已完成）。
+* 当前目标：项目、运行、任务关联校验；伪造不匹配 ID 的消息被拒绝且不执行。
+* 阻塞风险：归属校验为纯数据库一致性检查，可在当前 SQLite 环境完整验证。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-013 实现 Worker 任务领取
+
+* 实现摘要：新增 analysis application `ClaimedExecution`（不可变执行上下文值对象：task_id/analysis_run_id/project_id/task_type/attempt_number，不暴露聚合整体）与 infrastructure `task_claim.py`（`claim_task_for_execution`：校验任务存在（缺失抛 NotFoundError）→ 守卫式 UPDATE 仅 DISPATCHED→RUNNING（rowcount=0 返回 None 表示未获执行权）→ 新建 TaskAttempt（attempt_number 自增、RUNNING、started_at=now）→ 返回执行上下文；不在内部提交）。
+* 验证结果（2026-07-23）：12 项测试通过——DISPATCHED 领取成功返回上下文且任务 RUNNING、新建 RUNNING 尝试(started_at 注入时间，SQLite tz 规范化)、**已 RUNNING 时并发消费者返回 None 且不新建尝试**、非 DISPATCHED（终态/PENDING/RETRY_SCHEDULED）返回 None、未知任务 NotFoundError、**两消费者并发领取同一任务只一个获得执行权（仅一条尝试）**、重试领取 attempt_number 自增(1→2)不覆盖旧尝试、领取不在内部提交；全量 431 项通过；ruff、pyright 0 错误。
+* 说明：守卫式 `UPDATE ... WHERE status='DISPATCHED'` 在 PostgreSQL（行级锁串行化）与 SQLite（串行写）上均保证“只一个消费者成功”，故并发排他可在本机 SQLite 直接验证（无需 D-009 的 PG 方言编译旁证）。
 
 ### D-012 配置 Celery 资源队列
 
@@ -520,7 +526,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 88 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-012`），剩余 238 个。
+`TASKS.md` 共有 326 个原子任务，已完成 89 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-013`），剩余 237 个。
 
 已完成的非开发里程碑：
 
