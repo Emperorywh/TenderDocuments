@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 C 进行中；`C-001`～`C-034` 已完成，下一任务 `C-033`。
+* 当前阶段：阶段 C 进行中；`C-001`～`C-029`、`C-031`～`C-034` 已完成，下一任务 `C-030`（阶段 C 收尾）。
 * 整体完成度：`75 / 326` 个原子开发任务完成（约 `23.0%`）。
-* 当前分支：`main`，HEAD 为 `C-034` 提交（待创建）。
+* 当前分支：`main`，HEAD 为 `C-033` 提交（待创建）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### C-033 发布原始文件访问 API
+
+* 实现摘要：新增 document application `create_original_file_access_url.py`（CreateOriginalFileAccessUrlUseCase：载入版本→解析原始对象键→签发 presigned_get_url，返回 download_url/expires_at，不含对象键）与 GET /api/v1/documents/versions/{version_id}/original-url；TTL 取自配置 presigned_url_ttl_seconds。
+* 验证结果（2026-07-23）：3 项契约测试通过——成功 200 且响应键集合仅 {download_url, expires_at, method}（无 object_key）、presigned_get_url 以配置 TTL 调用、未知版本 404 NOT_FOUND；全量 312 项通过；ruff、pyright 0 错误。
 
 ### C-034 发布上传完成 API
 

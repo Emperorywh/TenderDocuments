@@ -31,6 +31,10 @@ from tender_insight.modules.document.application.create_document_relation import
     CreateDocumentRelationResult,
     CreateDocumentRelationUseCase,
 )
+from tender_insight.modules.document.application.create_original_file_access_url import (
+    CreateOriginalFileAccessUrlUseCase,
+    OriginalFileAccessUrl,
+)
 from tender_insight.modules.document.application.create_upload_session import (
     CreateUploadSessionCommand,
     CreateUploadSessionUseCase,
@@ -116,6 +120,28 @@ def create_router() -> APIRouter:
             max_compression_ratio=settings.max_compression_ratio,
         )
         return use_case.execute(CompleteUploadCommand(session_id=session_id))
+
+    @router.get(
+        "/documents/versions/{version_id}/original-url",
+        response_model=OriginalFileAccessUrl,
+    )
+    def create_original_file_access_url(
+        version_id: str,
+        session: Session = Depends(get_session),
+        object_storage: ObjectStorage = Depends(get_object_storage),  # type: ignore[assignment]
+    ) -> OriginalFileAccessUrl:
+        """签发原始文件短期下载地址。
+
+        对象默认私有，读取只能经后端签发的短期 presigned_get_url。响应只含
+        签名地址与到期时间，不暴露内部对象键；未知版本 404。
+        """
+        settings = get_settings()
+        use_case = CreateOriginalFileAccessUrlUseCase(
+            version_repository=SqlAlchemyDocumentVersionRepository(session),
+            object_storage=object_storage,
+            ttl_seconds=settings.presigned_url_ttl_seconds,
+        )
+        return use_case.execute(Uuid.from_str(version_id))
 
     @router.get(
         "/projects/{project_id}/documents",
