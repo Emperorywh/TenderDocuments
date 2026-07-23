@@ -14,7 +14,9 @@
 
 - ORM Model：`OutboxEventModel`（infrastructure）；
 - 写入端口：事务内 Outbox 写入（D-008）；
-- 领取用例：带行锁的事件领取（D-009）。
+- 领取用例：带行锁的事件领取（D-009）；
+- 投递端口：`OutboxBroker`（D-010），Celery 适配器 `CeleryOutboxBroker`；
+- 投递编排：`dispatch_outbox_events`（领取→投递→确认 DELIVERED，D-010）。
 
 ## 状态
 

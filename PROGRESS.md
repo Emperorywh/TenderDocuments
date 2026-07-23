@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-009` 已完成，下一任务 `D-010`。
-* 整体完成度：`85 / 326` 个原子开发任务完成（约 `26.1%`）。
-* 当前分支：`main`，HEAD 为 `D-009` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-010` 已完成，下一任务 `D-011`。
+* 整体完成度：`86 / 326` 个原子开发任务完成（约 `26.4%`）。
+* 当前分支：`main`，HEAD 为 `D-010` 提交（待创建）。
 * 最后更新时间：2026-07-23（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`D-010`
-* Task 名称：实现 Broker 投递与确认
-* 当前状态：待开始（`D-009` 已完成）。
-* 前置依赖：`D-009`（已完成）、`A-017`（Redis 开发服务，结构就绪，运行时待 Docker）。
-* 当前目标：Celery 投递适配器；领取事件投递到 Celery/Redis，投递成功后数据库记录确认状态（DELIVERED）。
-* 阻塞风险：真实 Celery/Redis 运行时验证待 Docker；可先用 Celery 内存 eager/模拟适配器验证投递与确认逻辑。
+* Task 编号：`D-011`
+* Task 名称：实现 Outbox 投递补偿
+* 当前状态：待开始（`D-010` 已完成）。
+* 前置依赖：`D-010`（已完成）。
+* 当前目标：失败退避与重新投递规则；模拟 Broker 失败后事件最终重新投递。
+* 阻塞风险：补偿重投逻辑可在当前 SQLite + 伪 broker 环境验证；真实 Celery 失败/恢复验证待 Docker。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-010 实现 Broker 投递与确认
+
+* 实现摘要：新增 outbox application `OutboxBroker` 端口（deliver，纯 Protocol）与 `OutboxDeliveryError`（code OUTBOX_DELIVERY_FAILED，502），登记稳定错误码；infrastructure 新增 `CeleryOutboxBroker`（注入 Celery 实例 + task_name，经 send_task 投递消息信封，底层异常归一为 OutboxDeliveryError）与 `outbox_delivery.py`（`mark_event_delivered` 置 DELIVERED + attempts 自增 + last_attempt_at 刷新；`dispatch_outbox_events` 在同一事务内领取→投递→确认，投递失败抛 OutboxDeliveryError 交由调用方回滚，事件保持 PENDING 待 D-011 补偿）。
+* 验证结果（2026-07-23）：10 项测试通过——端口模块 AST 扫描不导入 celery/redis/kombu、CeleryOutboxBroker 满足端口、send_task 以消息信封调用（event_id 幂等键）、底层异常归一 OutboxDeliveryError(502)、**投递成功后数据库记录 DELIVERED（attempts=1、last_attempt_at 刷新）**、batch_size 受控、仅 PENDING 被投递、空队列返回 0、投递失败抛错且回滚后保持 PENDING、mark 按 event_id 累加 attempts；全量 403 项通过；ruff、pyright 0 错误。
+* **运行时缺口（诚实记录）**：本机无 Celery worker/Redis，Celery 适配器以注入的伪 Celery 应用验证投递逻辑；真实 Celery send_task 投递与确认验证待 Docker 就绪补充。
 
 ### D-009 实现 Scheduler 事件领取
 
@@ -502,7 +508,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 85 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-009`），剩余 241 个。
+`TASKS.md` 共有 326 个原子任务，已完成 86 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-010`），剩余 240 个。
 
 已完成的非开发里程碑：
 
