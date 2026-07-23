@@ -37,6 +37,7 @@ from tender_insight.modules.document.infrastructure.models import (  # noqa: E40
     UploadSessionModel,
 )
 from tender_insight.modules.operation_log.infrastructure.models import OperationLogModel  # noqa: E402,F401
+from tender_insight.modules.outbox.infrastructure.models import OutboxEventModel  # noqa: E402,F401
 from tender_insight.modules.project.infrastructure.models import ProjectModel  # noqa: E402,F401
 
 config = context.config
