@@ -166,3 +166,7 @@ class TaskAttemptModel(Base, TimestampMixin):
     )
     # 失败时的稳定错误码（D-019 错误分类）。
     error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 最近心跳时间戳：运行中定期刷新，卡死任务扫描（D-017）据此识别过期执行。
+    heartbeat_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
