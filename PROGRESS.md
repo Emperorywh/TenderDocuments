@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-002` 已完成，下一任务 `D-003`。
-* 整体完成度：`78 / 326` 个原子开发任务完成（约 `23.9%`）。
-* 当前分支：`main`，HEAD 为 `D-002` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-003` 已完成，下一任务 `D-004`。
+* 整体完成度：`79 / 326` 个原子开发任务完成（约 `24.2%`）。
+* 当前分支：`main`，HEAD 为 `D-003` 提交（待创建）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-003 实现活动运行唯一规则
+
+* 实现摘要：领域层定义 ACTIVE_RUN_STATUSES / TERMINAL_RUN_STATUSES 与 is_active_run_status（活动运行唯一权威定义：PUBLISHED/OUTDATED/CANCELLED/FAILED 非活动，允许失败重试与同输入重分析）；迁移 0008 为 analysis_runs 增加 partial unique index（project_id+input_fingerprint WHERE status NOT IN 终态），WHERE 子句与领域终态集一致。
+* 验证结果（2026-07-23）：6 项测试通过——活动/终态集划分全覆盖且不重叠、同项目同输入第二个活动运行被拒（IntegrityError）、CANCELLED 后可再建活动运行、多个终态可并存、PUBLISHED 不阻止重分析、不同项目/不同指纹可并存；全量 349 项通过；ruff、pyright 0 错误。
 
 ### D-002 实现 AnalysisRun 状态机
 

@@ -24,6 +24,36 @@ from tender_insight.shared.identifiers import Uuid
 from tender_insight.shared.state_transitions import validate_transition
 from tender_insight.shared.states import AnalysisRunCompleteness, AnalysisRunStatus
 
+# 活动运行状态：仍可能产出结果、占用“同项目同输入唯一活动运行”名额的状态。
+# PUBLISHED/OUTDATED 不计入活动（已发布/已过期，允许同输入重分析），
+# CANCELLED/FAILED 为失败终态（允许重试）。本集合是“活动运行”的唯一权威定义，
+# 迁移 0008 的 partial unique index 与应用层创建运行校验必须与此一致
+# （SPEC.md 第 11.3 节）。
+ACTIVE_RUN_STATUSES: frozenset[AnalysisRunStatus] = frozenset({
+    AnalysisRunStatus.DRAFT,
+    AnalysisRunStatus.QUEUED,
+    AnalysisRunStatus.PARSING,
+    AnalysisRunStatus.EXTRACTING,
+    AnalysisRunStatus.ANALYZING,
+    AnalysisRunStatus.VERIFYING,
+    AnalysisRunStatus.REVIEW_REQUIRED,
+    AnalysisRunStatus.READY,
+    AnalysisRunStatus.CANCEL_REQUESTED,
+})
+
+# 终态（非活动）：迁移 partial index 的 WHERE 排除集与此一致。
+TERMINAL_RUN_STATUSES: frozenset[AnalysisRunStatus] = frozenset({
+    AnalysisRunStatus.CANCELLED,
+    AnalysisRunStatus.FAILED,
+    AnalysisRunStatus.PUBLISHED,
+    AnalysisRunStatus.OUTDATED,
+})
+
+
+def is_active_run_status(status: AnalysisRunStatus) -> bool:
+    """状态是否属于活动运行（用于唯一性约束与创建运行前置校验）。"""
+    return status in ACTIVE_RUN_STATUSES
+
 
 @dataclass
 class AnalysisRun:
