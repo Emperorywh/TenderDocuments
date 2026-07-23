@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-010` 已完成，下一任务 `D-011`。
-* 整体完成度：`86 / 326` 个原子开发任务完成（约 `26.4%`）。
-* 当前分支：`main`，HEAD 为 `D-010` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-011` 已完成，下一任务 `D-012`。
+* 整体完成度：`87 / 326` 个原子开发任务完成（约 `26.7%`）。
+* 当前分支：`main`，HEAD 为 `D-011` 提交（待创建）。
 * 最后更新时间：2026-07-23（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`D-011`
-* Task 名称：实现 Outbox 投递补偿
-* 当前状态：待开始（`D-010` 已完成）。
+* Task 编号：`D-012`
+* Task 名称：配置 Celery 资源队列
+* 当前状态：待开始（`D-011` 已完成）。
 * 前置依赖：`D-010`（已完成）。
-* 当前目标：失败退避与重新投递规则；模拟 Broker 失败后事件最终重新投递。
-* 阻塞风险：补偿重投逻辑可在当前 SQLite + 伪 broker 环境验证；真实 Celery 失败/恢复验证待 Docker。
+* 当前目标：convert、parse、ocr、extract、risk、report 路由；各 task_type 进入唯一预期队列。
+* 阻塞风险：队列路由配置（task_routes/queue 名称）可在当前环境静态验证；真实 Celery worker 多队列运行验证待 Docker。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-011 实现 Outbox 投递补偿
+
+* 实现摘要：新增纯领域退避规则 `outbox/domain/backoff.py`（`exponential_backoff_seconds`：base*factor^(attempts-1) 封顶 max，参数全显式注入无魔法常量）；refine D-010 dispatch 失败路径——投递失败由“回滚保持 PENDING”改为逐条标记 FAILED（新增 `mark_event_failed`，返回 `DispatchOutcome(delivered, failed)`，不回滚已成功条目）；新增 `outbox/infrastructure/outbox_compensation.py`（`requeue_failed_events`：按退避将已过等待且未超 max_attempts 的 FAILED 事件重置为 PENDING，超过 max_attempts 为死信不自动重投，attempts 跨重试保留）。
+* 验证结果（2026-07-23）：7 项测试通过——退避指数增长与封顶、attempts<1 返回 0、退避已过 FAILED→PENDING（attempts 保留）、退避未过保持 FAILED、超过 max_attempts 死信保持 FAILED、仅 FAILED 受影响、**完整重投周期（PENDING→失败 FAILED→退避后 requeue PENDING→恢复投递 DELIVERED）**；同步更新 D-010 测试匹配 DispatchOutcome 与 FAILED 标记（强化而非弱化）；全量 410 项通过；ruff、pyright 0 错误。
+* 说明：D-010 dispatch 的失败语义经 D-011 由“回滚 PENDING”演进为“标记 FAILED + 退避补偿”，是补偿机制的必要前置，D-010 测试同步更新且断言更严（FAILED 含 attempts/last_attempt_at）。
 
 ### D-010 实现 Broker 投递与确认
 
@@ -508,7 +514,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 86 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-010`），剩余 240 个。
+`TASKS.md` 共有 326 个原子任务，已完成 87 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-011`），剩余 239 个。
 
 已完成的非开发里程碑：
 

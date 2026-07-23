@@ -1,21 +1,26 @@
-"""outbox 投递与确认编排（D-010）。
+"""outbox 投递与确认编排（D-010、D-011）。
 
 Scheduler 投递步：在同一事务内领取 PENDING 事件 → 经 OutboxBroker 投递到
-Celery/Redis → 确认 DELIVERED，随后由调用方提交（SPEC.md 第 5.2 节、第 11.3 节）。
-行锁从领取持有至提交，确保并发 Scheduler 不会重复投递同一事件（D-009）。
+Celery/Redis → 成功确认 DELIVERED、失败标记 FAILED（attempts 自增、last_attempt_at
+刷新）。随后由调用方提交（SPEC.md 第 5.2 节、第 11.3 节）。行锁从领取持有至提交，
+确保并发 Scheduler 不会重复投递同一事件（D-009）。
 
 投递成功后事件落库为 DELIVERED（验证：投递成功后数据库记录确认状态）；投递失败
-抛 OutboxDeliveryError，调用方回滚事务使事件保持 PENDING，由 D-011 补偿按指数
-退避重新投递。outbox 允许重复投递，Worker 必须幂等消费（SPEC.md 第 11.3 节）。
+标记 FAILED，由 D-011 补偿按指数退避重新入队（requeue_failed_events）后下轮重新
+投递。outbox 允许重复投递，Worker 必须幂等消费（SPEC.md 第 11.3 节）。
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from sqlalchemy import func, update
 
-from tender_insight.modules.outbox.application import OutboxBroker
+from tender_insight.modules.outbox.application import (
+    OutboxBroker,
+    OutboxDeliveryError,
+)
 from tender_insight.modules.outbox.infrastructure.claim_events import (
     claim_pending_events,
 )
@@ -23,6 +28,17 @@ from tender_insight.modules.outbox.infrastructure.models import OutboxEventModel
 
 if TYPE_CHECKING:  # 仅类型注解用，避免运行期 ORM 耦合到应用编排签名。
     from sqlalchemy.orm import Session
+
+
+@dataclass(frozen=True)
+class DispatchOutcome:
+    """一轮投递的结果计数：成功确认 DELIVERED 与失败标记 FAILED 各若干。
+
+    逐条独立结算（不因单条失败回滚已成功投递的条目），失败条目由补偿重投（D-011）。
+    """
+
+    delivered: int
+    failed: int
 
 
 def mark_event_delivered(session: Session, event_id: str) -> None:
@@ -42,21 +58,44 @@ def mark_event_delivered(session: Session, event_id: str) -> None:
     )
 
 
+def mark_event_failed(session: Session, event_id: str) -> None:
+    """标记一条事件投递失败：FAILED + attempts 自增 + last_attempt_at 刷新。
+
+    保留 attempts/last_attempt_at 供 D-011 补偿计算退避与重新入队；不在内部提交。
+    """
+    session.execute(
+        update(OutboxEventModel)
+        .where(OutboxEventModel.event_id == event_id)
+        .values(
+            delivery_status="FAILED",
+            attempts=OutboxEventModel.attempts + 1,
+            last_attempt_at=func.now(),
+        )
+    )
+
+
 def dispatch_outbox_events(
     session: Session,
     broker: OutboxBroker,
     *,
     batch_size: int = 10,
-) -> int:
-    """Scheduler 投递步：领取→投递→确认 DELIVERED，返回本轮投递条数。
+) -> DispatchOutcome:
+    """Scheduler 投递步：领取→投递→逐条确认 DELIVERED/FAILED，返回本轮结果。
 
-    在调用方事务内执行（行锁从领取持有至提交）。逐条投递并确认：任一投递抛
-    OutboxDeliveryError 即向上抛出，调用方回滚使本轮事件保持 PENDING（已投递到
-    broker 的部分由幂等 Worker 去重），由 D-011 补偿重投。本函数不提交。
+    在调用方事务内执行（行锁从领取持有至提交）。逐条投递并结算：成功 mark_event_
+    delivered，失败捕获 OutboxDeliveryError 后 mark_event_failed（不抛出、不回滚已
+    成功条目），失败条目由 D-011 补偿按退避重新入队后下轮重投。本函数不提交。
     """
     claims = claim_pending_events(session, limit=batch_size)
+    delivered = 0
+    failed = 0
     for claim in claims:
-        # 投递失败抛 OutboxDeliveryError，终止本轮并交由调用方回滚。
-        broker.deliver(claim)
-        mark_event_delivered(session, claim.event_id)
-    return len(claims)
+        try:
+            broker.deliver(claim)
+        except OutboxDeliveryError:
+            mark_event_failed(session, claim.event_id)
+            failed += 1
+        else:
+            mark_event_delivered(session, claim.event_id)
+            delivered += 1
+    return DispatchOutcome(delivered=delivered, failed=failed)

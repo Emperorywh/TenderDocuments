@@ -27,6 +27,7 @@ from tender_insight.modules.outbox.application import (
 from tender_insight.modules.outbox.infrastructure.celery_broker import CeleryOutboxBroker
 from tender_insight.modules.outbox.infrastructure.models import OutboxEventModel
 from tender_insight.modules.outbox.infrastructure.outbox_delivery import (
+    DispatchOutcome,
     dispatch_outbox_events,
     mark_event_delivered,
 )
@@ -139,10 +140,11 @@ def test_dispatch_marks_events_delivered_on_success(db_session: Session) -> None
     db_session.commit()
     broker = _FakeBroker()
 
-    count = dispatch_outbox_events(db_session, broker, batch_size=10)
+    outcome = dispatch_outbox_events(db_session, broker, batch_size=10)
     db_session.commit()
 
-    assert count == 2
+    assert outcome.delivered == 2
+    assert outcome.failed == 0
     assert [c.event_id for c in broker.delivered] == ["evt-a", "evt-b"]
     rows = db_session.query(OutboxEventModel).order_by(OutboxEventModel.event_id).all()
     assert all(r.delivery_status == "DELIVERED" for r in rows)
@@ -159,10 +161,10 @@ def test_dispatch_respects_batch_size(db_session: Session) -> None:
     db_session.commit()
     broker = _FakeBroker()
 
-    count = dispatch_outbox_events(db_session, broker, batch_size=2)
+    outcome = dispatch_outbox_events(db_session, broker, batch_size=2)
     db_session.commit()
 
-    assert count == 2
+    assert outcome.delivered == 2
     # 其余仍为 PENDING，待下轮投递。
     pending = (
         db_session.query(OutboxEventModel)
@@ -181,10 +183,11 @@ def test_dispatch_only_processes_pending(db_session: Session) -> None:
     db_session.commit()
     broker = _FakeBroker()
 
-    count = dispatch_outbox_events(db_session, broker, batch_size=10)
+    outcome = dispatch_outbox_events(db_session, broker, batch_size=10)
     db_session.commit()
 
-    assert count == 1
+    assert outcome.delivered == 1
+    assert outcome.failed == 0
     assert [c.event_id for c in broker.delivered] == ["pending"]
 
 
@@ -192,26 +195,35 @@ def test_dispatch_returns_zero_when_empty(db_session: Session) -> None:
     """无 PENDING 事件时投递 0 条（Scheduler 空轮询）。"""
     broker = _FakeBroker()
 
-    assert dispatch_outbox_events(db_session, broker, batch_size=10) == 0
+    outcome = dispatch_outbox_events(db_session, broker, batch_size=10)
+
+    assert outcome == DispatchOutcome(delivered=0, failed=0)
     assert broker.delivered == []
 
 
-def test_dispatch_raises_and_keeps_pending_on_failure(db_session: Session) -> None:
-    """投递失败抛 OutboxDeliveryError；回滚后事件保持 PENDING 待 D-011 补偿重投。"""
+def test_dispatch_marks_failed_without_rolling_back_success(db_session: Session) -> None:
+    """投递失败标记 FAILED（不回滚已成功条目）；成功条目 DELIVERED、失败条目 FAILED。
+
+    逐条独立结算：evt-ok 投递成功 → DELIVERED，evt-bad 投递失败 → FAILED(attempts=1)，
+    失败条目由 D-011 补偿按退避重新入队后下轮重投。
+    """
     base = datetime(2026, 7, 23, 10, 0, tzinfo=UTC)
     _seed(db_session, event_id="evt-ok", created_at=base)
     _seed(db_session, event_id="evt-bad", created_at=base.replace(minute=1))
     db_session.commit()
     broker = _FakeBroker(fail_on="evt-bad")
 
-    with pytest.raises(OutboxDeliveryError):
-        dispatch_outbox_events(db_session, broker, batch_size=10)
-    # 调用方回滚（模拟 Scheduler 捕获后回滚事务）。
-    db_session.rollback()
+    outcome = dispatch_outbox_events(db_session, broker, batch_size=10)
+    db_session.commit()
 
-    # 回滚后全部保持 PENDING（包括已投递到 broker 的 evt-ok，由幂等 Worker 去重）。
-    rows = db_session.query(OutboxEventModel).all()
-    assert all(r.delivery_status == "PENDING" for r in rows)
+    assert outcome.delivered == 1
+    assert outcome.failed == 1
+    ok_row = db_session.query(OutboxEventModel).filter_by(event_id="evt-ok").one()
+    bad_row = db_session.query(OutboxEventModel).filter_by(event_id="evt-bad").one()
+    assert ok_row.delivery_status == "DELIVERED"
+    assert bad_row.delivery_status == "FAILED"
+    assert bad_row.attempts == 1
+    assert bad_row.last_attempt_at is not None
 
 
 def test_mark_delivered_is_idempotent_by_event_id(db_session: Session) -> None:
