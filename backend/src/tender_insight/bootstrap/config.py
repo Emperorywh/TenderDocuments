@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     # 单项目最大页数：业务验收硬限制（SPEC.md 第 3.2 节）。
     max_project_pages: int = 500
 
+    # ---- DOCX 压缩炸弹防御（SPEC.md 第 11.1 节，C-012 校验所需）----
+    # DOCX 容器解压后最大字节数（部署可配置）。
+    max_uncompressed_bytes: int = 1024 * 1024 * 1024
+    # DOCX 容器最大压缩比（解压后体积 / 压缩体积，部署可配置）。
+    max_compression_ratio: float = 1000.0
+
     # ---- 对象授权 URL 有效期（秒）----
     presigned_url_ttl_seconds: int = 900
 

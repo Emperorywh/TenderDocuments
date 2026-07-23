@@ -11,6 +11,11 @@ from sqlalchemy.orm import Session
 from tender_insight.bootstrap.config import get_settings
 from tender_insight.bootstrap.db import get_object_storage, get_session
 from tender_insight.modules.document.application import ObjectStorage
+from tender_insight.modules.document.application.complete_upload import (
+    CompleteUploadCommand,
+    CompleteUploadResult,
+    CompleteUploadUseCase,
+)
 from tender_insight.modules.document.application.confirm_document_type import (
     ConfirmDocumentTypeCommand,
     ConfirmDocumentTypeResult,
@@ -84,6 +89,33 @@ def create_router() -> APIRouter:
             session_ttl_seconds=settings.presigned_url_ttl_seconds,
         )
         return use_case.execute(command)
+
+    @router.post(
+        "/upload-sessions/{session_id}/complete",
+        response_model=CompleteUploadResult,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def complete_upload(
+        session_id: str,
+        session: Session = Depends(get_session),
+        object_storage: ObjectStorage = Depends(get_object_storage),  # type: ignore[assignment]
+    ) -> CompleteUploadResult:
+        """确认上传完成：校验对象后正式创建 DocumentVersion。
+
+        校验（大小/类型/完整性/压缩/SHA-256/重复）全部通过后才创建业务文件，
+        任一失败无业务残留（返回对应稳定错误码）。201 返回新版本标识。
+        """
+        settings = get_settings()
+        use_case = CompleteUploadUseCase(
+            upload_session_repository=SqlAlchemyUploadSessionRepository(session),
+            document_repository=SqlAlchemyDocumentRepository(session),
+            version_repository=SqlAlchemyDocumentVersionRepository(session),
+            object_storage=object_storage,
+            session=session,
+            max_uncompressed_bytes=settings.max_uncompressed_bytes,
+            max_compression_ratio=settings.max_compression_ratio,
+        )
+        return use_case.execute(CompleteUploadCommand(session_id=session_id))
 
     @router.get(
         "/projects/{project_id}/documents",

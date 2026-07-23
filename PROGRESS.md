@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 C 进行中；`C-001`～`C-032` 已完成，下一任务 `C-033`。
-* 整体完成度：`74 / 326` 个原子开发任务完成（约 `22.7%`）。
-* 当前分支：`main`，HEAD 为 `b9e24e1`（C-031 提交）。
+* 当前阶段：阶段 C 进行中；`C-001`～`C-034` 已完成，下一任务 `C-033`。
+* 整体完成度：`75 / 326` 个原子开发任务完成（约 `23.0%`）。
+* 当前分支：`main`，HEAD 为 `C-034` 提交（待创建）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### C-034 发布上传完成 API
+
+* 实现摘要：document API 新增 POST /api/v1/upload-sessions/{session_id}/complete → CompleteUploadUseCase（201 返回 document_id/version_id/version_number/sha256）；为压缩校验限额补充强类型配置 max_uncompressed_bytes/max_compression_ratio（避免魔法常量）。
+* 验证结果（2026-07-23）：3 项契约测试通过——成功 201 创建版本且无身份字段、类型不符 400 FILE_TYPE_MISMATCH 且无业务残留（0 Document/Version）、未知会话 404 NOT_FOUND；全量 309 项通过；ruff、pyright 0 错误。
 
 ### C-032 发布文件关系 API
 
