@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID
 
 
@@ -55,4 +56,20 @@ class StuckTask:
     project_id: UUID
     attempt_number: int
     last_activity: datetime
+
+
+class RecoveryAction(StrEnum):
+    """卡死任务恢复动作（D-018）。"""
+
+    SCHEDULED_RETRY = "SCHEDULED_RETRY"  # 标记重试（RETRY_SCHEDULED），待 D-020 重投递
+    FAILED = "FAILED"  # 超过最大重试，终态失败
+
+
+@dataclass(frozen=True)
+class RecoveryOutcome:
+    """卡死任务恢复结果（D-018）。"""
+
+    task_id: UUID
+    action: RecoveryAction
+    failed_attempt_number: int  # 被标记 FAILED 的卡死尝试（保留不覆盖）
 
