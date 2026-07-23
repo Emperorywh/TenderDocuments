@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-011` 已完成，下一任务 `D-012`。
-* 整体完成度：`87 / 326` 个原子开发任务完成（约 `26.7%`）。
-* 当前分支：`main`，HEAD 为 `D-011` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-012` 已完成，下一任务 `D-013`。
+* 整体完成度：`88 / 326` 个原子开发任务完成（约 `27.0%`）。
+* 当前分支：`main`，HEAD 为 `D-012` 提交（待创建）。
 * 最后更新时间：2026-07-23（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -15,12 +15,12 @@
 
 ## 2. 当前任务
 
-* Task 编号：`D-012`
-* Task 名称：配置 Celery 资源队列
-* 当前状态：待开始（`D-011` 已完成）。
-* 前置依赖：`D-010`（已完成）。
-* 当前目标：convert、parse、ocr、extract、risk、report 路由；各 task_type 进入唯一预期队列。
-* 阻塞风险：队列路由配置（task_routes/queue 名称）可在当前环境静态验证；真实 Celery worker 多队列运行验证待 Docker。
+* Task 编号：`D-013`
+* Task 名称：实现 Worker 任务领取
+* 当前状态：待开始（`D-012` 已完成）。
+* 前置依赖：`D-004`（已完成）、`D-012`（已完成）。
+* 当前目标：数据库原子领取用例；同一消息并发消费只获得一个执行权。
+* 阻塞风险：原子领取用 `SELECT ... FOR UPDATE SKIP LOCKED`（与 D-009 一致），可在 SQLite 验证领取逻辑 + PostgreSQL 方言编译证明并发排他；真实并发验证待 Docker。
 
 需要持续遵守的约束：
 
@@ -31,6 +31,12 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-012 配置 Celery 资源队列
+
+* 实现摘要：新增顶层 `workers` 包（PLAN.md 第 3.1 节，Celery Task 只加载上下文并调用应用用例，不承载业务状态机 ADR-005）。`workers/queues.py` 定义 AnalysisTaskType 枚举（convert/parse/ocr/extract/risk/report）与权威路由表 TASK_TYPE_QUEUE（每个 task_type 进入唯一队列），OCR 独立队列供 worker-ocr、其余归 worker-default；提供 queue_for_task_type（未知抛 UnknownTaskTypeError 不静默错路由）、extract_task_type、route_message、Celery callable router route_for_task（与 route_message 共用单一权威逻辑）。`workers/celery_app.py` 提供 create_celery_app 工厂，声明全部队列（含 default）并注册 task_type 路由。
+* 验证结果（2026-07-23）：9 项测试通过——**各 task_type 进入唯一预期队列**、映射双射无共享队列、未知 task_type 拒绝、route_message 未知抛错、无 task_type 走默认队列、OCR 独立于 worker-default（5 个普通队列）、task_type 提取（顶层/payload）、Celery router 按 kwargs 路由、create_celery_app 声明全部队列并注册路由；全量 419 项通过；ruff、pyright 0 错误。
+* 说明：workers 包位于 modules 之外，不受模块分层/禁止 SDK 检查约束（与 bootstrap 一致），可导入 celery/kombu；具体 Celery Task 主体随后续业务阶段补充，broker URL 注入便于测试（memory://）与部署分别提供。
 
 ### D-011 实现 Outbox 投递补偿
 
@@ -514,7 +520,7 @@
 
 ---
 
-`TASKS.md` 共有 326 个原子任务，已完成 87 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-011`），剩余 239 个。
+`TASKS.md` 共有 326 个原子任务，已完成 88 个（`A-001`～`A-024`、`B-001`～`B-019`、`C-001`～`C-034`、`D-001`～`D-012`），剩余 238 个。
 
 已完成的非开发里程碑：
 
