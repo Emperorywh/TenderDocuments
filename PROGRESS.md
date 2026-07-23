@@ -2,9 +2,9 @@
 
 ## 1. 当前总体状态
 
-* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-007` 已完成，下一任务 `D-008`。
-* 整体完成度：`83 / 326` 个原子开发任务完成（约 `25.5%`）。
-* 当前分支：`main`，HEAD 为 `D-007` 提交（待创建）。
+* 当前阶段：阶段 D 进行中；`C-001`～`C-034` 全部完成，`D-001`～`D-008` 已完成，下一任务 `D-009`。
+* 整体完成度：`84 / 326` 个原子开发任务完成（约 `25.8%`）。
+* 当前分支：`main`，HEAD 为 `D-008` 提交（待创建）。
 * 最后更新时间：2026-07-22（Asia/Shanghai）。
 * 当前是否存在阻塞：是（环境约束，详见第 5 节）。`A-002` 要求 uv 锁文件，而当前环境未安装 `uv`；后续阶段 B/C/D/E/F 还需要 Docker、PostgreSQL、Redis、MinIO、LibreOffice、PaddleOCR、DeepSeek、WeasyPrint、Linux 等。在受限环境下优先构建可在当前环境验证的代码与配置，并在本文件如实记录哪些验证已执行、哪些因外部依赖未就绪而待执行。
 
@@ -31,6 +31,11 @@
 * 新增或修改代码必须使用必要的多行简体中文注释；不得主动格式化既有代码；不得自动启动浏览器测试。
 
 ## 3. 已完成任务
+
+### D-008 实现事务 Outbox 写入
+
+* 实现摘要：新增 outbox application 端口（OutboxDeliveryStatus、OutboxEvent 不可变值对象、OutboxWriter Protocol，纯标准库）与 infrastructure `outbox_writer.py`（SqlAlchemyOutboxWriter 在当前会话暂存 PENDING 事件，不在内部提交）。
+* 验证结果（2026-07-23）：5 项测试通过——端口模块不导入 sqlalchemy、适配器满足端口且提交后持久化、提交时字段正确(PENDING/attempts=0/payload)、业务事务回滚时事件同步回滚不留孤儿、写入不在内部提交(新会话提交前查不到)；全量 385 项通过；ruff、pyright 0 错误。
 
 ### D-007 建立 OutboxEvent 迁移
 
