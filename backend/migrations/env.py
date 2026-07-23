@@ -28,6 +28,7 @@ from tender_insight.modules.analysis.infrastructure.models import (  # noqa: E40
     AnalysisRunInputModel,
     AnalysisRunModel,
     AnalysisTaskModel,
+    TaskAttemptModel,
 )
 from tender_insight.modules.document.infrastructure.models import (  # noqa: E402,F401
     DocumentModel,

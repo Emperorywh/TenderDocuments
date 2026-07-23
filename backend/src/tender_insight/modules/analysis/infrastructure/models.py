@@ -129,3 +129,40 @@ class AnalysisTaskModel(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(24), nullable=False)
     # 任务幂等键：运行内唯一，防重复结果（SPEC.md 第 11.3 节）。
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+
+
+class TaskAttemptModel(Base, TimestampMixin):
+    """task_attempts 表：每次执行尝试记录（D-005）。
+
+    每次执行（含重试）新增一条记录，永不覆盖旧尝试（SPEC.md 第 5.4、11.2 节）。
+    attempt_number 在任务内自增且唯一，使重试历史可追溯。attempt 级状态为执行结果
+    （RUNNING/SUCCEEDED/FAILED），与 AnalysisTaskStatus（任务级状态）分离。
+    """
+
+    __tablename__ = "task_attempts"
+    __table_args__ = (
+        UniqueConstraint(
+            "analysis_task_id",
+            "attempt_number",
+            name="uq_task_attempts_task_number",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    analysis_task_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("analysis_tasks.id"),
+        nullable=False,
+    )
+    # 任务内自增的尝试序号（从 1 起），唯一，保证重试历史有序可追溯。
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    # 执行结果（RUNNING/SUCCEEDED/FAILED），独立于任务级状态。
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # 失败时的稳定错误码（D-019 错误分类）。
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
